@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("buyer")
+  phone         String?
+  description   String?
+  
+  // Поля для агента
+  licenseNumber String?
+  experience    Int?
+  
+  // Поля для застройщика
+  companyName   String?
+  regions       String[]
+  establishedYear Int?
+
+  accounts      Account[]
+  sessions      Session[]
+  favorites     Property[] @relation("UserFavorites")
+  listings      Property[] @relation("UserListings")
+  ratings       Rating[]
+  savedSearches SavedSearch[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Property {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  price         Float
+  location      String
+  status        String
+  bedrooms   Int @default(1) // Например, по умолчанию 1 спальня
+  bathrooms  Int @default(1) // По умолчанию 1 ванная
+  area       Float @default(50) // Например, 50 кв.м.
+  type       String @default("apartment") // Дефолтный тип недвижимости
+  images        Image[]  // Связь с моделью Image
+  coverImage    String   // Main property image
+  specs         Json     // Will store beds, baths, area, etc.
+  features      String[] // pool, garden, parking, etc.
+  yearBuilt     Int?
+  furnished     Boolean  @default(false)
+  parking       Boolean  @default(false)
+  petsAllowed   Boolean  @default(false)
+  views         Int      @default(0)
+  latitude      Float?
+  longitude     Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  owner         User     @relation("UserListings", fields: [ownerId], references: [id])
+  ownerId       String
+  likedBy       User[]    @relation("UserFavorites")
+  ratings       Rating[]
+  averageRating Float    @default(0)
+  totalRatings  Int      @default(0)
+}
+
+model Image {
+  id         String   @id @default(cuid())
+  url        String
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId String
+}
+
+model Rating {
+  id         Int      @id @default(autoincrement())
+  value      Int
+  createdAt  DateTime @default(now())
+  userId     String
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@unique([propertyId, userId])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model SavedSearch {
+  id        String   @id @default(cuid())
+  name      String
+  criteria  Json     // Будет хранить все параметры поиска
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+enum Role {
+  USER
+  AGENT
+  ADMIN
+}
+
+enum Status {
+  AVAILABLE
+  SOLD
+  RENTED
+} 
