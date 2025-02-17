@@ -12,6 +12,7 @@ import Select from '@/components/ui/select';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { signIn } from 'next-auth/react';
+import { Textarea } from '@/components/ui/textarea';
 
 const roles: { value: UserRole; label: string; available: boolean; description: string }[] = [
   { 
@@ -46,11 +47,22 @@ const roles: { value: UserRole; label: string; available: boolean; description: 
   },
 ];
 
+// Добавим коды стран
+const countryCodes = [
+  { value: '+357', label: 'Cyprus (+357)' },
+  { value: '+44', label: 'UK (+44)' },
+  { value: '+1', label: 'USA (+1)' },
+  { value: '+7', label: 'Russia (+7)' },
+  { value: '+49', label: 'Germany (+49)' },
+  // Добавьте другие страны по необходимости
+];
+
 const RegisterForm = () => {
   const [step, setStep] = useState(1);
   const [selectedRole, setSelectedRole] = useState<UserRole>('buyer');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [descriptionLength, setDescriptionLength] = useState(0);
 
   const formSchema = z.object({
     email: z.string().email('Invalid email address'),
@@ -64,6 +76,13 @@ const RegisterForm = () => {
     companyName: selectedRole === 'builder' ? z.string().min(2, 'Company name must be at least 2 characters') : z.string().optional(),
     regions: selectedRole === 'builder' ? z.array(z.string()).min(1, 'Select at least one region') : z.array(z.string()).optional(),
     establishedYear: selectedRole === 'builder' ? z.number().min(1900).max(new Date().getFullYear()) : z.number().optional(),
+    countryCode: z.string().min(1, 'Country code is required'),
+    phone: z.string()
+      .min(5, 'Phone number must be at least 5 characters')
+      .regex(/^[0-9]+$/, 'Phone number must contain only digits'),
+    description: z.string()
+      .max(500, 'Description must be less than 500 characters')
+      .optional(),
   });
 
   const {
@@ -100,12 +119,15 @@ const RegisterForm = () => {
       setError(null);
       setIsSubmitting(true);
 
+      const formattedPhone = `${values.countryCode}${values.phone}`;
+
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...values,
           role: selectedRole,
+          phone: formattedPhone,
         }),
       });
       
@@ -124,7 +146,7 @@ const RegisterForm = () => {
 
     } catch (error) {
       console.error('Registration error:', error);
-      setError(error.message || 'An error occurred during registration');
+      setError(error instanceof Error ? error.message : 'An error occurred during registration');
       setIsSubmitting(false);
     }
   };
@@ -136,15 +158,15 @@ const RegisterForm = () => {
   const getFieldsForStep = (currentStep: number): Array<keyof z.infer<typeof formSchema>> => {
     switch (currentStep) {
       case 1:
-        return ['role'];
+        return ['role', 'countryCode', 'phone'];
       case 2:
         return ['name', 'email', 'password'];
       case 3:
         return selectedRole === 'agent' 
-          ? ['licenseNumber', 'experience']
+          ? ['licenseNumber', 'experience', 'description']
           : selectedRole === 'builder'
-          ? ['companyName', 'regions', 'establishedYear']
-          : [];
+          ? ['companyName', 'regions', 'establishedYear', 'description']
+          : ['description'];
       default:
         return [];
     }
@@ -162,6 +184,13 @@ const RegisterForm = () => {
     
     return () => subscription.unsubscribe();
   }, [watch, error]);
+
+  // Добавляем обработчик изменения текста
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setDescriptionLength(value.length);
+    register('description').onChange(e);
+  };
 
   return (
     <div className="space-y-4 max-w-md mx-auto my-12">
@@ -233,6 +262,38 @@ const RegisterForm = () => {
                 </div>
               ))}
             </div>
+
+            {/* Добавляем поля для телефона */}
+            <div className="grid grid-cols-12 gap-2">
+              <div className="col-span-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Country Code
+                </label>
+                <Select
+                  {...register('countryCode')}
+                  error={errors.countryCode?.message}
+                >
+                  <option value="">Select code</option>
+                  {countryCodes.map((code) => (
+                    <option key={code.value} value={code.value}>
+                      {code.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              
+              <div className="col-span-8">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number
+                </label>
+                <Input
+                  {...register('phone')}
+                  type="tel"
+                  placeholder="Enter phone number"
+                  error={errors.phone?.message}
+                />
+              </div>
+            </div>
           </div>
         )}
 
@@ -300,7 +361,7 @@ const RegisterForm = () => {
               <p className="text-gray-500 mt-1 text-sm">
                 {selectedRole === 'agent' ? 'Provide your professional details' :
                  selectedRole === 'builder' ? 'Tell us about your company' :
-                 'Almost done!'}
+                 'Tell us more about yourself'}
               </p>
             </div>
 
@@ -372,6 +433,32 @@ const RegisterForm = () => {
                 </div>
               </div>
             )}
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                About {selectedRole === 'agent' ? 'Your Experience' : 
+                      selectedRole === 'builder' ? 'Your Company' : 
+                      'Yourself'}
+              </label>
+              <Textarea
+                {...register('description')}
+                placeholder={
+                  selectedRole === 'agent' 
+                    ? "Describe your experience and expertise in real estate..." 
+                    : selectedRole === 'builder'
+                    ? "Tell about your company and its achievements..."
+                    : "Share a bit about yourself and what you're looking for..."
+                }
+                rows={4}
+                error={errors.description?.message}
+                onChange={handleDescriptionChange}
+                maxLength={500}
+              />
+              <p className="text-xs text-gray-500 flex justify-between">
+   
+                <span>{500 - descriptionLength} characters remaining</span>
+              </p>
+            </div>
           </div>
         )}
 

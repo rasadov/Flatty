@@ -29,7 +29,7 @@ export async function GET() {
       }
     });
 
-    const formattedProperties = properties.map(property => ({
+    const formattedProperties = properties.map((property: any) => ({
       ...property,
       coverImage: property.coverImage || property.images[0],
       images: property.images,

@@ -5,7 +5,7 @@ import { User } from '@/types/auth';
 import { Card } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
 import Button from '@/components/ui/button';
-import { Edit, Mail, Phone } from 'lucide-react';
+import { Edit, Mail, Phone, FileText } from 'lucide-react';
 import { EditProfileDialog } from './EditProfileDialog';
 
 interface ProfileCardProps {
@@ -24,7 +24,7 @@ export function ProfileCard({ user: initialUser }: ProfileCardProps) {
     <>
       <Card className="p-6">
         <div className="flex flex-col items-center">
-          <Avatar 
+          <Avatar
             size="lg"
             src={user.image}
             fallback={user.name?.[0] || 'U'}
@@ -33,11 +33,16 @@ export function ProfileCard({ user: initialUser }: ProfileCardProps) {
           <h2 className="mt-4 text-xl font-semibold">{user.name}</h2>
           <p className="text-sm text-gray-500 capitalize">{user.role}</p>
 
-          {user.description && (
-            <p className="mt-4 text-sm text-gray-600 text-center">
-              {user.description}
+          {/* Description Block */}
+          <div className="w-full mt-6 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <FileText className="w-4 h-4 text-gray-400" />
+              <h3 className="text-sm font-medium text-gray-700">About Me</h3>
+            </div>
+            <p className="text-sm text-gray-600 whitespace-pre-wrap">
+              {user.description || 'No description provided'}
             </p>
-          )}
+          </div>
 
           <Button 
             variant="outline" 
@@ -61,7 +66,11 @@ export function ProfileCard({ user: initialUser }: ProfileCardProps) {
               <Phone className="w-5 h-5 text-gray-400" />
               <div>
                 <p className="text-sm text-gray-500">Phone</p>
-                <p className="text-sm">{user.phone || 'Not provided'}</p>
+                <p className="text-sm">
+                  {user.countryCode && user.phone 
+                    ? `${user.countryCode} ${user.phone}`
+                    : 'Not provided'}
+                </p>
               </div>
             </div>
           </div>

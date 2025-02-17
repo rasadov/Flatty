@@ -16,6 +16,7 @@ model User {
   password      String?
   role          String    @default("buyer")
   phone         String?
+  countryCode   String?
   description   String?
   
   // Поля для агента
@@ -42,6 +43,7 @@ model Property {
   title         String
   description   String
   price         Float
+  currency      String   @default("EUR")
   location      String
   status        String
   bedrooms   Int @default(1) // Например, по умолчанию 1 спальня
@@ -50,7 +52,7 @@ model Property {
   type       String @default("apartment") // Дефолтный тип недвижимости
   images        Image[]  // Связь с моделью Image
   coverImage    String   // Main property image
-  specs         Json     // Will store beds, baths, area, etc.
+  specs         Json?    @default("{}")     // Will store beds, baths, area, etc.
   features      String[] // pool, garden, parking, etc.
   yearBuilt     Int?
   furnished     Boolean  @default(false)
@@ -67,6 +69,21 @@ model Property {
   ratings       Rating[]
   averageRating Float    @default(0)
   totalRatings  Int      @default(0)
+  category        String    @default("apartment")
+  complexName     String?   // Name of residential complex
+  totalArea       Float     // Total area (m²)
+  livingArea      Float?    // Living area (m²)
+  floor           Int?      // Current floor
+  apartmentStories Int?     // Number of stories in apartment
+  buildingFloors  Int?      // Total building floors
+  livingRooms     Int?      // Number of living rooms
+  balconies       Int       @default(0)
+  totalRooms      Int       @default(1)
+  renovation      String?   // Cosmetic, Designer, European style, Needs renovation
+  installment     Boolean   @default(false)
+  swimmingPool    Boolean   @default(false)
+  gym             Boolean   @default(false)
+  elevator        Boolean   @default(false)
 }
 
 model Image {
@@ -85,7 +102,7 @@ model Rating {
   property   Property @relation(fields: [propertyId], references: [id])
   user       User     @relation(fields: [userId], references: [id])
 
-  @@unique([propertyId, userId])
+  @@unique([propertyId, userId], name: "propertyId_userId")
 }
 
 model Account {

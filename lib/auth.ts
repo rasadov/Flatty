@@ -1,5 +1,5 @@
 import { NextAuthOptions } from 'next-auth';
-import { PrismaAdapter } from '@auth/prisma-adapter';
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from '@/lib/prisma';
 import { compare } from 'bcryptjs';
@@ -14,6 +14,9 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.description = user.description;
+        token.phone = user.phone;
+        token.countryCode = user.countryCode;
       }
       return token;
     },
@@ -21,6 +24,9 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.description = token.description as string | null;
+        session.user.phone = token.phone as string | null;
+        session.user.countryCode = token.countryCode as string | null;
       }
       return session;
     }
@@ -59,6 +65,9 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          description: user.description,
+          phone: user.phone,
+          countryCode: user.countryCode,
         };
       }
     })

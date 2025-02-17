@@ -14,6 +14,13 @@ export const registerSchema = z.object({
   companyName: z.string().optional(),
   regions: z.array(z.string()).optional(),
   establishedYear: z.number().optional(),
+  countryCode: z.string().min(1, 'Country code is required'),
+  phone: z.string()
+    .min(5, 'Phone number must be at least 5 characters')
+    .regex(/^[0-9]+$/, 'Phone number must contain only digits'),
+  description: z.string()
+    .max(500, 'Description must be less than 500 characters')
+    .optional(),
 });
 
 export const updateProfileSchema = z.object({

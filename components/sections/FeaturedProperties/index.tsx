@@ -106,11 +106,18 @@ const FeaturedProperties = () => {
             location={property.location}
             type={property.type}
             status={property.status}
-            specs={{
-              beds: property.specs.beds,
-              baths: property.specs.baths,
-              area: property.specs.area,
-            }}
+            specs={property.specs}
+            totalArea={property.totalArea}
+            livingArea={property.livingArea}
+            floor={property.floor}
+            apartmentStories={property.apartmentStories}  
+            buildingFloors={property.buildingFloors}
+            livingRooms={property.livingRooms}
+            bedrooms={property.bedrooms}
+            bathrooms={property.bathrooms}
+            balconies={property.balconies}
+            totalRooms={property.totalRooms}
+            renovation={property.renovation}
             coverImage={property.coverImage}
             images={property.images}
             ratings={property.ratings || []}

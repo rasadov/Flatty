@@ -10,6 +10,8 @@ import { updateProfileSchema } from '@/lib/validations/user';
 import { useToast } from '@/components/ui/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import type { User } from '@/types/auth';
+import { useSession } from 'next-auth/react';
+import { z } from 'zod';
 
 interface EditProfileDialogProps {
   user: User;
@@ -28,6 +30,7 @@ type FormData = {
 export function EditProfileDialog({ user, isOpen, onClose, onUpdate }: EditProfileDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const session = useSession();
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(updateProfileSchema),
@@ -39,33 +42,36 @@ export function EditProfileDialog({ user, isOpen, onClose, onUpdate }: EditProfi
     }
   });
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (values: FormData) => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(values),
       });
-
-      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to update profile');
+        throw new Error('Failed to update profile');
       }
 
-      onUpdate(result);
-      onClose();
+      const updatedUser = await response.json();
+      
+      onUpdate(updatedUser);
       
       toast({
-        title: 'Success',
-        description: 'Your profile has been updated.',
+        title: 'Profile updated',
+        description: 'Your profile has been successfully updated.',
       });
+      
+      onClose();
+      
+      window.location.reload();
     } catch (error) {
       console.error('Update error:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to update profile. Please try again.',
+        description: 'Failed to update profile. Please try again.',
         variant: 'destructive',
       });
     } finally {

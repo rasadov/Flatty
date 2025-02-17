@@ -17,40 +17,49 @@ export async function POST(request: Request) {
     const data = await request.json();
     console.log('Received data:', data);
 
-    const property = await prisma.property.create({
-      data: {
-        title: data.title,
-        description: data.description,
-        price: Number(data.price),
-        location: data.location,
-        type: data.type,
-        status: data.status === 'for-sale' ? 'sale' : 'rent',
-        bedrooms: data.specs.beds,
-        bathrooms: data.specs.baths,
-        area: data.specs.area,
-        coverImage: data.coverImage,
-        images: {
-          create: data.images.map((url: string) => ({
-            url: url
-          }))
-        },
-        specs: data.specs,
-        features: data.features || [],
-        yearBuilt: data.specs.yearBuilt ? Number(data.specs.yearBuilt) : null,
-        furnished: Boolean(data.specs.furnished),
-        parking: Boolean(data.specs.parking),
-        petsAllowed: false,
-        latitude: data.latitude || null,
-        longitude: data.longitude || null,
-        views: 0,
-        averageRating: 0,
-        totalRatings: 0,
-        owner: {
-          connect: {
-            id: session.user.id
-          }
-        },
+    const propertyData = {
+      title: data.title,
+      description: data.description,
+      price: data.price,
+      currency: data.currency,
+      location: data.location,
+      type: data.type,
+      status: data.status.replace('for-', ''),
+      
+      totalArea: data.totalArea || 0,
+      bedrooms: data.bedrooms || 1,
+      bathrooms: data.bathrooms || 1,
+      area: data.area || 0,
+      
+      category: data.category || 'apartment',
+      complexName: data.complexName,
+      livingArea: data.livingArea,
+      floor: data.floor,
+      apartmentStories: data.apartmentStories,
+      buildingFloors: data.buildingFloors,
+      livingRooms: data.livingRooms,
+      balconies: data.balconies || 0,
+      totalRooms: data.totalRooms || 1,
+      renovation: data.renovation,
+      installment: data.installment || false,
+      parking: data.parking || false,
+      swimmingPool: data.swimmingPool || false,
+      gym: data.gym || false,
+      elevator: data.elevator || false,
+      
+      coverImage: data.coverImage,
+      images: {
+        create: data.images.map((url: string) => ({ url }))
       },
+      owner: {
+        connect: {
+          id: session.user.id
+        }
+      }
+    };
+
+    const property = await prisma.property.create({
+      data: propertyData,
       include: {
         images: true,
         ratings: true,
@@ -61,8 +70,9 @@ export async function POST(request: Request) {
     return NextResponse.json(property);
   } catch (error) {
     console.error('Error creating property:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to create property', details: error.message },
+      { error: 'Failed to create property', details: errorMessage },
       { status: 500 }
     );
   }
@@ -81,35 +91,21 @@ export async function GET() {
       },
     });
 
-    const formattedProperties = properties.map(property => {
-      const formattedProperty = {
-        id: property.id,
-        title: property.title,
-        description: property.description,
-        price: property.price,
-        location: property.location,
-        type: property.type,
-        status: property.status,
-        specs: {
-          beds: property.bedrooms,
-          baths: property.bathrooms,
-          area: property.area,
-        },
-        coverImage: property.coverImage,
-        images: property.images.map(img => img.url),
-        ratings: property.ratings,
-        createdAt: property.createdAt,
-      };
+    console.log('Properties from DB:', properties);
 
-      return formattedProperty;
-    });
+    const formattedProperties = properties.map((property: any) => ({
+      ...property,
+      coverImage: property.coverImage.url,
+      images: property.images.map((img: any) => img.url)
+    }));
 
     return NextResponse.json(formattedProperties);
   } catch (error) {
     console.error('Error fetching properties:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to fetch properties' },
+      { error: 'Failed to fetch properties', details: errorMessage },
       { status: 500 }
     );
   }
-} 
+}

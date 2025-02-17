@@ -19,7 +19,7 @@ export async function GET(
         id: session.user.id,
         favorites: {
           some: {
-            id: parseInt(params.propertyId)
+            id: params.propertyId
           }
         }
       }

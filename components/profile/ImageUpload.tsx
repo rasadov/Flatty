@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import Image from 'next/image';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface ImageUploadProps {
   onImagesChange: (images: string[]) => void;
@@ -12,13 +12,13 @@ interface ImageUploadProps {
   maxImages?: number;
 }
 
-export function ImageUpload({ 
-  onImagesChange, 
-  onCoverImageChange, 
-  maxImages = 10 
+export function ImageUpload({
+  onImagesChange,
+  onCoverImageChange,
+  maxImages = 10,
 }: ImageUploadProps) {
   const [images, setImages] = useState<string[]>([]);
-  const [coverImage, setCoverImage] = useState<string>('');
+  const [coverImage, setCoverImage] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,20 +31,20 @@ export function ImageUpload({
     }
 
     setIsUploading(true);
-    
+
     try {
       const uploadedUrls = await Promise.all(
         Array.from(files).map(async (file) => {
           const formData = new FormData();
-          formData.append('file', file);
-          
-          const response = await fetch('/api/upload', {
-            method: 'POST',
+          formData.append("file", file);
+
+          const response = await fetch("/api/upload", {
+            method: "POST",
             body: formData,
           });
 
           if (!response.ok) {
-            throw new Error('Upload failed');
+            throw new Error("Upload failed");
           }
 
           const data = await response.json();
@@ -62,8 +62,8 @@ export function ImageUpload({
         onCoverImageChange(uploadedUrls[0]);
       }
     } catch (error) {
-      console.error('Upload error:', error);
-      alert('Ошибка при загрузке файлов');
+      console.error("Upload error:", error);
+      alert("Ошибка при загрузке файлов");
     } finally {
       setIsUploading(false);
     }
@@ -76,7 +76,7 @@ export function ImageUpload({
 
     // Если удалили обложку, сбрасываем её
     if (images[index] === coverImage) {
-      const newCoverImage = newImages.length > 0 ? newImages[0] : '';
+      const newCoverImage = newImages.length > 0 ? newImages[0] : "";
       setCoverImage(newCoverImage);
       onCoverImageChange(newCoverImage);
     }
@@ -95,7 +95,7 @@ export function ImageUpload({
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
             <Upload className="w-8 h-8 mb-2 text-gray-500" />
             <p className="mb-2 text-sm text-gray-500">
-              {isUploading ? 'Загрузка...' : 'Нажмите для загрузки'}
+              {isUploading ? "Загрузка..." : "Нажмите для загрузки"}
             </p>
           </div>
           <input
@@ -112,8 +112,8 @@ export function ImageUpload({
       {images.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {images.map((url, index) => (
-            <div 
-              key={url} 
+            <div
+              key={url}
               className={cn(
                 "relative w-full pt-[100%] group",
                 url === coverImage && "ring-2 ring-primary rounded-lg"
@@ -128,26 +128,35 @@ export function ImageUpload({
                   className="w-full h-full object-cover"
                   priority
                 />
-                
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSetCover(index);
-                      }}
-                      className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                    >
-                      <ImageIcon className="w-4 h-4 text-white" />
-                    </button>
-                    {/* Тултип */}
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="bg-black/75 text-white text-xs py-1 px-2 rounded">
-                        Сделать обложкой
-                      </span>
-                    </div>
+
+                {url === coverImage && (
+                  <div className="absolute bottom-2 left-2 right-2 text-center">
+                    <span className="bg-black/75 text-white text-[12px] py-1 px-1 rounded">
+                      Cover Image
+                    </span>
                   </div>
+                )}
+              </div>
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSetCover(index);
+                    }}
+                    className="p-1 text-[10px] text-white rounded-sm bg-white/10 hover:bg-white/20 transition-colors"
+                  >
+                    {/* <ImageIcon className="w-4 h-4 text-white" /> */}
+                    Set Cover
+                  </button>
+                  {/* <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="bg-black/75 text-white text-xs py-1 px-2 rounded">
+                     Cover
+                    </span>
+                  </div> */}
+                </div>
+                <div className="relative">
                   <button
                     type="button"
                     onClick={(e) => {
@@ -158,15 +167,8 @@ export function ImageUpload({
                   >
                     <X className="w-4 h-4 text-white" />
                   </button>
+                 
                 </div>
-
-                {url === coverImage && (
-                  <div className="absolute bottom-2 left-2 right-2 text-center">
-                    <span className="text-xs bg-black/50 text-white px-2 py-1 rounded-full">
-                      Обложка
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
           ))}
@@ -174,4 +176,4 @@ export function ImageUpload({
       )}
     </div>
   );
-} 
+}

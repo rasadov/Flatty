@@ -18,11 +18,9 @@ interface PropertyCardProps {
   location: string;
   type: string;
   status: string;
-  specs: {
-    beds: number;
-    baths: number;
-    area: number;
-  };
+  bedrooms: number;
+  bathrooms: number;
+  totalArea: number;
   coverImage?: string;
   images?: string[];
   ratings: any[];
@@ -66,9 +64,9 @@ const PropertyCard = ({ id, ...props }: PropertyCardProps) => {
             propertyType: props.type,
             location: props.location,
             price: props.price,
-            beds: props.specs.beds,
-            baths: props.specs.baths,
-            area: props.specs.area
+            beds: props.bedrooms,
+            baths: props.bathrooms,
+            area: props.totalArea
           }
         }),
       });
@@ -101,7 +99,7 @@ const PropertyCard = ({ id, ...props }: PropertyCardProps) => {
     ? props.ratings.find(r => r.userId === session.user.id)?.value 
     : undefined;
 
-    const { beds = 0, baths = 0, area = 0 } = props.specs ?? {};
+  
 
   return (
     <div 
@@ -162,15 +160,15 @@ const PropertyCard = ({ id, ...props }: PropertyCardProps) => {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
               <span className="text-gray-400">🛏</span>
-              <span className="text-sm font-medium text-gray-600">{props.specs.beds}</span>
+              <span className="text-sm font-medium text-gray-600">{props.bedrooms}</span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-gray-400">🚿</span>
-              <span className="text-sm font-medium text-gray-600">{props.specs.baths}</span>
+              <span className="text-sm font-medium text-gray-600">{props.bathrooms}</span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-gray-400">📏</span>
-              <span className="text-sm font-medium text-gray-600">{props.specs.area} м²</span>
+              <span className="text-sm font-medium text-gray-600">{props.totalArea} м²</span>
             </div>
           </div>
           <div className="text-lg font-bold text-primary">

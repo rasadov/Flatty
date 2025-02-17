@@ -18,6 +18,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         images: true,
         ratings: true,
         owner: true,
+        likedBy: true,
       },
     });
 
@@ -40,14 +41,15 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         area: property.area,
       },
       coverImage: property.coverImage,
-      images: property.images.map(img => img.url),
+      images: property.images.map((img: any) => img.url),
       ratings: property.ratings,
       owner: property.owner,
       createdAt: property.createdAt.toISOString(),
       totalRatings: property.ratings.length,
       averageRating: property.ratings.length > 0
-        ? property.ratings.reduce((acc, r) => acc + r.value, 0) / property.ratings.length
-        : 0
+        ? property.ratings.reduce((acc: number, r: any) => acc + r.value, 0) / property.ratings.length
+        : 0,
+      kedBy: property.likedBy ?? [],
     };
 
     return <PropertyDetails property={formattedProperty} />;

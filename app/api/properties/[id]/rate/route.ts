@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(
   request: Request,
@@ -10,31 +10,26 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { value } = await request.json();
 
-    // Проверяем существующий рейтинг
     const existingRating = await prisma.rating.findUnique({
-      where: {
-        userId_propertyId: {
-          userId: session.user.id,
-          propertyId: params.id
-        }
+      where: { 
+        propertyId_userId: { 
+          propertyId: params.id, 
+          userId: session.user.id 
+        } 
       }
     });
-
     if (existingRating) {
       // Обновляем существующий рейтинг
       const rating = await prisma.rating.update({
         where: {
-          userId_propertyId: {
+          propertyId_userId: {
+            propertyId: params.id,
             userId: session.user.id,
-            propertyId: params.id
           }
         },
         data: { value }
@@ -46,16 +41,16 @@ export async function POST(
         data: {
           value,
           userId: session.user.id,
-          propertyId: params.id
-        }
+          propertyId: params.id,
+        },
       });
       return NextResponse.json(rating);
     }
   } catch (error) {
-    console.error('Error rating property:', error);
+    console.error("Error rating property:", error);
     return NextResponse.json(
-      { error: 'Failed to rate property' },
+      { error: "Failed to rate property" },
       { status: 500 }
     );
   }
-} 
+}

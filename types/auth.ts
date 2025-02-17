@@ -6,8 +6,9 @@ export interface User {
   email: string;
   image?: string | null;
   role: UserRole;
-  phone?: string | null;
-  description?: string | null;
+  phone: string | null;
+  countryCode: string | null;
+  description: string | null;
   // Дополнительные поля для агентов
   licenseNumber?: string;
   experience?: number;
