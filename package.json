@@ -8,7 +8,8 @@
 		"start": "next start",
 		"lint": "next lint",
 		"studio": "prisma studio",
-		"seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+		"seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts",
+		"generate-secret": "node -e \"console.log(crypto.randomBytes(32).toString('hex'))\""
 	},
 	"dependencies": {
 		"@auth/core": "^0.37.3",

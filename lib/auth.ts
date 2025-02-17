@@ -4,11 +4,20 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from '@/lib/prisma';
 import { compare } from 'bcryptjs';
 
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error('Please provide NEXTAUTH_SECRET environment variable');
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
-  secret: process.env.NEXTAUTH_SECRET, // Обязательно добавьте секрет для продакшена
+  secret: process.env.NEXTAUTH_SECRET,
   session: { 
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 дней
+  },
+  pages: {
+    signIn: '/auth/signin',
+    error: '/auth/error',
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -32,9 +41,6 @@ export const authOptions: NextAuthOptions = {
       return session;
     }
   },
-  pages: {
-    signIn: '/auth/signin',
-  },
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -44,7 +50,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null;
+          throw new Error('Please provide both email and password');
         }
 
         const user = await prisma.user.findUnique({
@@ -52,13 +58,13 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user || !user.password) {
-          return null;
+          throw new Error('No user found with this email');
         }
 
         const isPasswordValid = await compare(credentials.password, user.password);
 
         if (!isPasswordValid) {
-          return null;
+          throw new Error('Invalid password');
         }
 
         return {
@@ -72,5 +78,6 @@ export const authOptions: NextAuthOptions = {
         };
       }
     })
-  ]
+  ],
+  debug: process.env.NODE_ENV === 'development',
 };
