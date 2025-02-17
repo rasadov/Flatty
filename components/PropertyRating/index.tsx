@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import Button from '../ui/button';
 
 interface PropertyRatingProps {
-  propertyId: number;
+  propertyId: string;
   currentRating: number;
   totalRatings: number;
   userRating?: number;

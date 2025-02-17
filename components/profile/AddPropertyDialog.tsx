@@ -40,6 +40,11 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
   const form = useForm<PropertyFormData>({
     resolver: zodResolver(propertySchema),
     defaultValues: {
+      specs: {           // добавляем specs
+        beds: 0,
+        baths: 0,
+        area: 0,
+      },
       title: '',
       description: '',
       price: 0,

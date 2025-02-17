@@ -35,10 +35,10 @@ export function EditProfileDialog({ user, isOpen, onClose, onUpdate }: EditProfi
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(updateProfileSchema),
     defaultValues: {
-      name: user.name || '',
-      email: user.email || '',
-      phone: user.phone || '',
-      description: user.description || '',
+      name: user.name ?? '',        // Если user.name undefined, получим пустую строку
+      email: user.email ?? '',           // Если это поле опциональное, можно оставить как есть
+      phone: user.phone ?? '',
+      description: user.description ?? '',
     }
   });
 

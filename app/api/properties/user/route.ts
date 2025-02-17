@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
+
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -43,4 +45,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-} 
+}

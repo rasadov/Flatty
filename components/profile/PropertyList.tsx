@@ -59,6 +59,7 @@ export default function PropertyList() {
           {properties.map((property) => (
             <PropertyCard
               key={property.id}
+              property={property}
               id={property.id}
               title={property.title}
               description={property.description}
@@ -74,8 +75,7 @@ export default function PropertyList() {
               coverImage={property.coverImage}
               images={property.images}
               ratings={property.ratings || []}
-              totalRatings={property.ratings?.length || 0}
-            />
+              totalRatings={property.ratings?.length || 0} bedrooms={0} bathrooms={0} totalArea={0} likedBy={[]}           />
           ))}
         </div>
       )}

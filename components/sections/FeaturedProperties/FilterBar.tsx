@@ -9,8 +9,7 @@ import {
   propertyTypes, 
   priceRanges, 
   bedroomOptions, 
-  sortOptions,
-  propertyFeatures 
+  sortOptions
 } from '@/constants/properties';
 import { useCurrency } from '@/components/ui/currency-selector';
 

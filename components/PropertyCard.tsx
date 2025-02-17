@@ -11,10 +11,17 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 
 interface PropertyCardProps {
+  property: Property;
   id: string | number;
   title: string;
   description: string;
   price: number;
+  livingArea?: number;
+  specs: {
+    beds: number;
+    baths: number;
+    area: number;
+  };
   location: string;
   type: string;
   status: string;
@@ -25,6 +32,15 @@ interface PropertyCardProps {
   images?: string[];
   ratings: any[];
   totalRatings: number;
+  likedBy: any[];
+  floor?: number;
+  apartmentStories?: number;
+  buildingFloors?: number;
+  livingRooms?: number;
+  balconies?: number;
+  totalRooms?: number;
+  renovation?: string;
+  furnishing?: string;
 }
 
 const PropertyCard = ({ id, ...props }: PropertyCardProps) => {

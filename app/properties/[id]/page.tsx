@@ -49,7 +49,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
       averageRating: property.ratings.length > 0
         ? property.ratings.reduce((acc: number, r: any) => acc + r.value, 0) / property.ratings.length
         : 0,
-      kedBy: property.likedBy ?? [],
+     likedBy: property.likedBy || [],
     };
 
     return <PropertyDetails property={formattedProperty} />;

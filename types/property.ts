@@ -1,4 +1,7 @@
+import { z } from "zod";
+
 export interface Property {
+  likedBy: any[];
   id: string;
   title: string;
   description: string;
@@ -37,6 +40,11 @@ export interface Property {
 }
 
 export interface PropertyFormData {
+  specs: {
+    beds: number;
+    baths: number;
+    area: number;
+  };
   title: string;
   description: string;
   price: number;
@@ -97,5 +105,10 @@ export const propertySchema = z.object({
   gym: z.boolean(),
   elevator: z.boolean(),
   yearBuilt: z.number().optional(),
-  furnished: z.boolean()
+  furnished: z.boolean(),
+  specs: z.object({
+    beds: z.number(),
+    baths: z.number(),
+    area: z.number(),
+  }),
 }); 

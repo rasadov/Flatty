@@ -24,14 +24,14 @@ export const registerSchema = z.object({
 });
 
 export const updateProfileSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-  phone: z.string().optional(),
-  description: z.string().max(500, 'Description must be less than 500 characters').optional(),
+  name: z.string().min(1),
+  email: z.string().email(),
   image: z.string().optional(),
+  phone: z.string(),             // Теперь обязательно
+  description: z.string(),       // Теперь обязательно
   licenseNumber: z.string().optional(),
   experience: z.number().optional(),
   companyName: z.string().optional(),
   regions: z.array(z.string()).optional(),
   establishedYear: z.number().optional(),
-}); 
+});

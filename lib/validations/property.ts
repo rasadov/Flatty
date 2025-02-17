@@ -14,6 +14,11 @@ export const propertySchema = z.object({
   bedrooms: z.number().min(1, 'Number of bedrooms is required'),
   bathrooms: z.number().min(1, 'Number of bathrooms is required'),
   area: z.number().min(0, 'Area cannot be negative'),
+  specs: z.object({
+    beds: z.number(),
+    baths: z.number(),
+    area: z.number(),
+  }),
   
   // Остальные поля...
   category: z.enum(['apartment', 'house', 'villa', 'land']).default('apartment'),

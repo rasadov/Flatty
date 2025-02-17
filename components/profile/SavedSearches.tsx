@@ -103,19 +103,25 @@ export function SavedSearches() {
           {searches.map((search) => (
             <Card key={search.id} className="p-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">{search.name}</h4>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {Object.entries(search.criteria)
-                      .map(([key, value]) => {
-                        if (key === 'priceRange') {
-                          return `€${value.min} - €${value.max}`;
-                        }
-                        return `${key}: ${value}`;
-                      })
-                      .join(' • ')}
-                  </p>
-                </div>
+              <div>
+  <h4 className="font-medium">{search.name}</h4>
+  <p className="text-sm text-gray-500 mt-1">
+    {Object.entries(search.criteria)
+      .map(([key, value]) => {
+        if (
+          key === 'priceRange' &&
+          typeof value === 'object' &&
+          value !== null &&
+          'min' in value &&
+          'max' in value
+        ) {
+          return `€${(value as { min: number; max: number }).min} - €${(value as { min: number; max: number }).max}`;
+        }
+        return `${key}: ${value}`;
+      })
+      .join(' • ')}
+  </p>
+</div>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"

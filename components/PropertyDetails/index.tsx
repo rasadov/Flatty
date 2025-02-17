@@ -239,7 +239,7 @@ const PropertyDetails = ({ property }: PropertyDetailsProps) => {
                   propertyId={property.id}
                   currentRating={property.averageRating}
                   totalRatings={property.totalRatings}
-                  userRating={property.ratings.find(r => r.userId === session?.user?.id)?.value}
+                  userRating={property.ratings.find(r => r.userId === session?.user?.id)?.value ?? undefined}
                   onRate={handleRate}
                 />
               </div>

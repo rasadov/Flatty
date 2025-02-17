@@ -9,12 +9,7 @@ type ToastProps = {
   variant?: "default" | "destructive";
 };
 
-type Toast = ToastProps & {
-  id: string;
-  title?: string;
-  description?: string;
-  variant?: "default" | "destructive";
-};
+
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -141,6 +136,8 @@ type Toast = {
   title?: string;
   description?: string;
   variant?: "default" | "destructive";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 export function toast({ ...props }: ToastProps) {

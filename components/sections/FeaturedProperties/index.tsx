@@ -92,7 +92,6 @@ const FeaturedProperties = () => {
       <FilterBar 
         filters={filters}
         onFilterChange={setFilters}
-        loading={isLoading}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-12">
@@ -110,7 +109,7 @@ const FeaturedProperties = () => {
             totalArea={property.totalArea}
             livingArea={property.livingArea}
             floor={property.floor}
-            apartmentStories={property.apartmentStories}  
+            apartmentStories={property.apartmentStories}
             buildingFloors={property.buildingFloors}
             livingRooms={property.livingRooms}
             bedrooms={property.bedrooms}
@@ -122,7 +121,8 @@ const FeaturedProperties = () => {
             images={property.images}
             ratings={property.ratings || []}
             totalRatings={property.ratings?.length || 0}
-            likedBy={property.likedBy}
+            likedBy={property.likedBy || []}
+            property={property}
           />
         ))}
       </div>
