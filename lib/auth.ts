@@ -6,6 +6,7 @@ import { compare } from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
+  secret: process.env.NEXTAUTH_SECRET, // Обязательно добавьте секрет для продакшена
   session: { 
     strategy: 'jwt',
   },
@@ -72,4 +73,4 @@ export const authOptions: NextAuthOptions = {
       }
     })
   ]
-}; 
+};
