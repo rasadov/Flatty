@@ -105,7 +105,7 @@ const FeaturedProperties = () => {
             location={property.location}
             type={property.type}
             status={property.status}
-            specs={property.specs}
+          
             totalArea={property.totalArea}
             livingArea={property.livingArea}
             floor={property.floor}

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { propertySchema } from '@/lib/validations/property';
 
 export async function POST(request: Request) {
   try {
@@ -105,6 +106,72 @@ export async function GET() {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { error: 'Failed to fetch properties', details: errorMessage },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const data = await request.json();
+    console.log('Received data:', data);
+
+    // Проверяем, принадлежит ли объект текущему пользователю
+    const existingProperty = await prisma.property.findUnique({
+      where: { id: params.id },
+      include: { owner: true }
+    });
+
+    if (!existingProperty || existingProperty.owner.id !== session.user.id) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      );
+    }
+
+    const updatedProperty = await prisma.property.update({
+      where: { id: params.id },
+      data: {
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        currency: data.currency,
+        location: data.location,
+        type: data.type,
+        status: data.status,
+        totalArea: data.totalArea,
+        livingArea: data.livingArea,
+        bedrooms: data.bedrooms,
+        bathrooms: data.bathrooms,
+        floor: data.floor,
+        buildingFloors: data.buildingFloors,
+        parking: data.parking,
+        elevator: data.elevator,
+        updatedAt: new Date(),
+      },
+      include: {
+        owner: true,
+        images: true,
+      }
+    });
+
+    return NextResponse.json(updatedProperty);
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json(
+      { error: 'Failed to update property' },
       { status: 500 }
     );
   }

@@ -36,6 +36,15 @@ export default function PropertyList() {
     setProperties(prev => [newProperty, ...prev]);
   };
 
+  const handlePropertyUpdate = (updatedProperty: Property) => {
+    console.log('Updating property in UI:', updatedProperty); // Для отладки
+    setProperties(prevProperties => 
+      prevProperties.map(prop => 
+        prop.id === updatedProperty.id ? updatedProperty : prop
+      )
+    );
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -67,15 +76,31 @@ export default function PropertyList() {
               location={property.location}
               type={property.type}
               status={property.status}
-              specs={{
-                beds: property.specs.beds,
-                baths: property.specs.baths,
-                area: property.specs.area,
-              }}
               coverImage={property.coverImage}
               images={property.images}
               ratings={property.ratings || []}
-              totalRatings={property.ratings?.length || 0} bedrooms={0} bathrooms={0} totalArea={0} likedBy={[]}           />
+              totalRatings={property.ratings?.length || 0}
+              bedrooms={property.bedrooms}
+              bathrooms={property.bathrooms}
+              totalArea={property.totalArea}
+              likedBy={property.likedBy || []}
+              currency={property.currency}
+              createdAt={property.createdAt}
+              category={property.category}
+              balconies={property.balconies}
+              livingArea={property.livingArea}
+              floor={property.floor}
+              buildingFloors={property.buildingFloors}
+              livingRooms={property.livingRooms}
+              totalRooms={property.totalRooms}
+              installment={property.installment}
+              parking={property.parking}
+              swimmingPool={property.swimmingPool}
+              gym={property.gym}
+              elevator={property.elevator}
+              onUpdate={handlePropertyUpdate}
+              isUserProperty={true}
+            />
           ))}
         </div>
       )}
