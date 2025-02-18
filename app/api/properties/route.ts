@@ -90,10 +90,10 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Detailed error:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
-      cause: error.cause
+      name: error instanceof Error ? error.name : 'Unknown Error',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      cause: error instanceof Error ? error.cause : undefined
     });
 
     return NextResponse.json(

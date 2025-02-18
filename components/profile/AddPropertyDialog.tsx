@@ -92,44 +92,47 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
     console.log('Cleared saved form data');
   };
 
-  const validateCurrentStep = () => {
-    switch (step) {
-      case 1:
-        if (!form.watch('title')?.trim()) return "Title is required";
-        if (!form.watch('description')?.trim()) return "Description is required";
-        if (!form.watch('location')) return "Location is required";
-        if (!form.watch('type')) return "Property type is required";
-        if (!form.watch('status')) return "Status is required";
-        if (!form.watch('price') || form.watch('price') <= 0) return "Valid price is required";
-        break;
-      
-      case 2:
-        if (!form.watch('bedrooms') || form.watch('bedrooms') <= 0) return "Number of bedrooms is required";
-        if (!form.watch('bathrooms') || form.watch('bathrooms') <= 0) return "Number of bathrooms is required";
-        if (!form.watch('totalArea') || form.watch('totalArea') <= 0) return "Total area is required";
-        break;
-      
-      case 3:
-        break;
-      
-      case 4:
-        if (images.length === 0) return "At least one image is required";
-        if (!coverImage) return "Cover image is required";
-        break;
-    }
-    return null;
-  };
-
   const handleNext = () => {
-    const error = validateCurrentStep();
-    if (error) {
-      toast({
-        title: "Validation Error",
-        description: error,
-        variant: "destructive",
-      });
-      return;
+    const formData = form.getValues();
+    console.log('Current form data:', formData);
+
+    if (step === 2) {
+      const bedrooms = formData.bedrooms === '' ? 0 : Number(formData.bedrooms);
+      const bathrooms = formData.bathrooms === '' ? 0 : Number(formData.bathrooms);
+      const totalArea = formData.totalArea === '' ? 0 : Number(formData.totalArea);
+
+      form.setValue('bedrooms', bedrooms);
+      form.setValue('bathrooms', bathrooms);
+      form.setValue('totalArea', totalArea);
+
+      if (bedrooms <= 0) {
+        toast({
+          title: "Validation Error",
+          description: "Number of bedrooms must be greater than 0",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (bathrooms <= 0) {
+        toast({
+          title: "Validation Error",
+          description: "Number of bathrooms must be greater than 0",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (totalArea <= 0) {
+        toast({
+          title: "Validation Error",
+          description: "Total area must be greater than 0",
+          variant: "destructive"
+        });
+        return;
+      }
     }
+
     setStep(prev => prev + 1);
   };
 
@@ -179,11 +182,7 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
         elevator: Boolean(data.elevator),
         images: images,
         coverImage: coverImage,
-        specs: {
-          beds: Number(data.bedrooms),
-          baths: Number(data.bathrooms),
-          area: Number(data.totalArea)
-        }
+       
       };
 
       console.log("Sending data to server:", propertyData);
@@ -276,6 +275,40 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
   const handleClose = () => {
     onClose();
     console.log('Dialog closed');
+  };
+
+  const validateCurrentStep = () => {
+    const formData = form.getValues();
+    
+    switch (step) {
+      case 1:
+        if (!formData.title?.trim()) return "Title is required";
+        if (!formData.description?.trim()) return "Description is required";
+        if (!formData.location) return "Location is required";
+        if (!formData.type) return "Property type is required";
+        if (!formData.status) return "Status is required";
+        if (!formData.price || formData.price <= 0) return "Valid price is required";
+        break;
+      
+      case 2:
+        const bedrooms = Number(formData.bedrooms);
+        const bathrooms = Number(formData.bathrooms);
+        const totalArea = Number(formData.totalArea);
+
+        if (!bedrooms || bedrooms <= 0) return "Number of bedrooms is required";
+        if (!bathrooms || bathrooms <= 0) return "Number of bathrooms is required";
+        if (!totalArea || totalArea <= 0) return "Total area is required";
+        break;
+      
+      case 3:
+        break;
+      
+      case 4:
+        if (images.length === 0) return "At least one image is required";
+        if (!coverImage) return "Cover image is required";
+        break;
+    }
+    return null;
   };
 
   return (
@@ -378,45 +411,32 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
 
           {step === 2 && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-1">Category</label>
-                  <Select {...register('category')}>
-                    <option value="apartment">Apartment</option>
-                    <option value="house">House</option>
-                    <option value="villa">Villa</option>
-                    <option value="land">Land</option>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-1">Complex Name</label>
-                  <Input {...register('complexName')} />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-1">Total Area (m²)</label>
-                  <Input type="number" {...register('totalArea', { valueAsNumber: true })} />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1">Living Area (m²)</label>
-                  <Input type="number" {...register('livingArea', { valueAsNumber: true })} />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-1">Floor</label>
-                  <Input type="number" {...register('floor', { valueAsNumber: true })} />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1">Building Floors</label>
-                  <Input type="number" {...register('buildingFloors', { valueAsNumber: true })} />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-1">Year Built</label>
-                  <Input type="number" {...register('yearBuilt', { valueAsNumber: true })} />
-                </div>
-              </div>
+              <Input
+                label="Number of Bedrooms"
+                type="number"
+                defaultValue="1"
+                {...form.register('bedrooms')}
+              />
+              <Input
+                label="Number of Bathrooms"
+                type="number"
+                defaultValue="1"
+                {...form.register('bathrooms')}
+              />
+              <Input
+                label="Total Area (m²)"
+                type="number"
+                {...form.register('totalArea')}
+              />
+              <Select
+                label="Category"
+                {...form.register('category')}
+              >
+                <option value="apartment">Apartment</option>
+                <option value="house">House</option>
+                <option value="villa">Villa</option>
+                <option value="land">Land</option>
+              </Select>
             </div>
           )}
 
