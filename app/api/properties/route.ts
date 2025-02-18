@@ -15,64 +15,93 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json();
-    console.log('Received data:', data);
+    console.log('Received data:', JSON.stringify(data, null, 2));
 
     const propertyData = {
       title: data.title,
       description: data.description,
-      price: data.price,
+      price: Number(data.price),
       currency: data.currency,
       location: data.location,
       type: data.type,
-      status: data.status.replace('for-', ''),
+      status: data.status,
       
-      totalArea: data.totalArea || 0,
-      bedrooms: data.bedrooms || 1,
-      bathrooms: data.bathrooms || 1,
-      area: data.area || 0,
+      totalArea: Number(data.totalArea) || 0,
+      bedrooms: Number(data.bedrooms) || 1,
+      bathrooms: Number(data.bathrooms) || 1,
+      area: Number(data.area) || 0,
       
       category: data.category || 'apartment',
       complexName: data.complexName,
-      livingArea: data.livingArea,
-      floor: data.floor,
-      apartmentStories: data.apartmentStories,
-      buildingFloors: data.buildingFloors,
-      livingRooms: data.livingRooms,
-      balconies: data.balconies || 0,
-      totalRooms: data.totalRooms || 1,
+      livingArea: Number(data.livingArea) || 0,
+      floor: Number(data.floor) || 0,
+      buildingFloors: Number(data.buildingFloors) || 0,
+      livingRooms: Number(data.livingRooms) || 0,
+      balconies: Number(data.balconies) || 0,
+      totalRooms: Number(data.totalRooms) || 1,
       renovation: data.renovation,
-      installment: data.installment || false,
-      parking: data.parking || false,
-      swimmingPool: data.swimmingPool || false,
-      gym: data.gym || false,
-      elevator: data.elevator || false,
+      installment: Boolean(data.installment),
+      parking: Boolean(data.parking),
+      swimmingPool: Boolean(data.swimmingPool),
+      gym: Boolean(data.gym),
+      elevator: Boolean(data.elevator),
       
       coverImage: data.coverImage,
       images: {
-        create: data.images.map((url: string) => ({ url }))
+        create: Array.isArray(data.images) ? data.images.map((url: string) => ({ url })) : []
       },
-      owner: {
-        connect: {
-          id: session.user.id
+      
+      ownerId: session.user.id,
+      
+      specs: {
+        create: {
+          beds: Number(data.bedrooms) || 0,
+          baths: Number(data.bathrooms) || 0,
+          area: Number(data.totalArea) || 0
         }
       }
     };
+
+    console.log('Attempting to create property with data:', JSON.stringify(propertyData, null, 2));
 
     const property = await prisma.property.create({
       data: propertyData,
       include: {
         images: true,
-        ratings: true,
-        owner: true
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true
+          }
+        }
       }
     });
 
-    return NextResponse.json(property);
+    console.log('Property created successfully:', JSON.stringify(property, null, 2));
+
+    const formattedProperty = {
+      ...property,
+      images: property.images.map(img => img.url)
+    };
+
+    return NextResponse.json(formattedProperty);
+
   } catch (error) {
-    console.error('Error creating property:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Detailed error:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      cause: error.cause
+    });
+
     return NextResponse.json(
-      { error: 'Failed to create property', details: errorMessage },
+      { 
+        error: 'Failed to create property',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        additionalInfo: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }
@@ -95,7 +124,7 @@ export async function GET() {
 
     const formattedProperties = properties.map((property: any) => ({
       ...property,
-      coverImage: property.coverImage.url,
+      coverImage: property.coverImage,
       images: property.images.map((img: any) => img.url)
     }));
 

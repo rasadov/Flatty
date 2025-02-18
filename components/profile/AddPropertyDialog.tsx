@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import Select from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -36,56 +37,27 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
   
   const FORM_STORAGE_KEY = 'property-form-data';
   
-  // Добавляем coverImage и images в defaultValues, чтобы они попадали в данные формы
   const form = useForm<PropertyFormData>({
     resolver: zodResolver(propertySchema),
     defaultValues: {
-      specs: {           // добавляем specs
-        beds: 0,
-        baths: 0,
-        area: 0,
-      },
-      title: '',
-      description: '',
-      price: 0,
       currency: 'EUR',
-      location: '',
-      type: '',
       status: 'for-sale',
-      totalArea: 0,
-      bedrooms: 1,
-      bathrooms: 1,
-      area: 0,
-      category: 'apartment',
-      balconies: 0,
-      totalRooms: 1,
-      installment: false,
-      parking: false,
-      swimmingPool: false,
-      gym: false,
-      elevator: false,
-      yearBuilt: undefined,
-      furnished: false,
-      coverImage: '', // добавлено
-      images: []      // добавлено
+      type: 'apartment',
     }
   });
 
   const { register, handleSubmit, trigger, watch, formState: { errors, isSubmitting }, setValue } = form;
 
-  // Синхронизируем локальное состояние coverImage с данными формы
   useEffect(() => {
     setValue('coverImage', coverImage, { shouldValidate: true });
     console.log("Updated form coverImage:", coverImage);
   }, [coverImage, setValue]);
 
-  // Синхронизируем локальное состояние images с данными формы
   useEffect(() => {
     setValue('images', images, { shouldValidate: true });
     console.log("Updated form images:", images);
   }, [images, setValue]);
 
-  // Загружаем сохраненные данные при открытии диалога
   useEffect(() => {
     if (isOpen) {
       const savedData = localStorage.getItem(FORM_STORAGE_KEY);
@@ -100,7 +72,6 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
     }
   }, [isOpen]);
 
-  // Сохраняем данные при изменении формы
   useEffect(() => {
     const subscription = form.watch((formData) => {
       const dataToSave = {
@@ -116,94 +87,106 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
     return () => subscription.unsubscribe();
   }, [form.watch, step, images, coverImage]);
 
-  // Очищаем сохраненные данные после успешного добавления
   const clearSavedData = () => {
     localStorage.removeItem(FORM_STORAGE_KEY);
     console.log('Cleared saved form data');
   };
 
-  const handleNext = async () => {
-    let isStepValid = false;
-    console.log('handleNext - Current step:', step);
-    
-    if (step === 1) {
-      isStepValid = await trigger([
-        'title', 
-        'description', 
-        'price', 
-        'location', 
-        'type', 
-        'status', 
-        'currency'
-      ]);
-    } else if (step === 2) {
-      isStepValid = await trigger([
-        'category', 
-        'totalArea'
-      ]);
-    } else if (step === 3) {
-      isStepValid = await trigger([
-        'bedrooms', 
-        'bathrooms'
-      ]);
+  const validateCurrentStep = () => {
+    switch (step) {
+      case 1:
+        if (!form.watch('title')?.trim()) return "Title is required";
+        if (!form.watch('description')?.trim()) return "Description is required";
+        if (!form.watch('location')) return "Location is required";
+        if (!form.watch('type')) return "Property type is required";
+        if (!form.watch('status')) return "Status is required";
+        if (!form.watch('price') || form.watch('price') <= 0) return "Valid price is required";
+        break;
+      
+      case 2:
+        if (!form.watch('bedrooms') || form.watch('bedrooms') <= 0) return "Number of bedrooms is required";
+        if (!form.watch('bathrooms') || form.watch('bathrooms') <= 0) return "Number of bathrooms is required";
+        if (!form.watch('totalArea') || form.watch('totalArea') <= 0) return "Total area is required";
+        break;
+      
+      case 3:
+        break;
+      
+      case 4:
+        if (images.length === 0) return "At least one image is required";
+        if (!coverImage) return "Cover image is required";
+        break;
     }
-    
-    console.log('handleNext - Validation result for step', step, ':', isStepValid);
-    
-    if (isStepValid) {
-      setStep(step + 1);
-      console.log('Moving to next step:', step + 1);
-    } else {
-      console.log('Validation failed on step:', step);
-      toast({
-        title: 'Error',
-        description: 'Please fill in all required fields',
-        variant: 'destructive',
-      });
-    }
+    return null;
   };
 
-  // Обработчик отправки формы
+  const handleNext = () => {
+    const error = validateCurrentStep();
+    if (error) {
+      toast({
+        title: "Validation Error",
+        description: error,
+        variant: "destructive",
+      });
+      return;
+    }
+    setStep(prev => prev + 1);
+  };
+
   const handleFormSubmit = async (data: PropertyFormData) => {
-    console.log("Form submitted on step:", step, "with data:", data);
-    console.log("Current images:", images);
-    console.log("Current coverImage:", coverImage);
+    console.log("Form submission started", { data, step });
 
     if (step < 4) {
-      console.log("Not final step. Proceeding to next step.");
       handleNext();
       return;
     }
 
-    if (images.length === 0) {
-      console.log("No images uploaded. Aborting submit.");
+    if (images.length === 0 || !coverImage) {
       toast({
         title: "Error",
-        description: "Please upload at least one image",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!coverImage) {
-      console.log("No cover image selected. Aborting submit.");
-      toast({
-        title: "Error",
-        description: "Please select a cover image",
-        variant: "destructive",
+        description: "Please upload at least one image and select a cover image",
+        variant: "destructive"
       });
       return;
     }
 
     try {
       const propertyData = {
-        ...data,
-        images,
-        coverImage,
-        specs: data.specs ?? {} // Передаем значение для обязательного поля specs
+        title: data.title,
+        description: data.description,
+        price: Number(priceInput.replace(/,/g, '')),
+        currency: data.currency,
+        location: data.location,
+        type: data.type,
+        status: data.status,
+        totalArea: Number(data.totalArea),
+        bedrooms: Number(data.bedrooms),
+        bathrooms: Number(data.bathrooms),
+        area: Number(data.area || 0),
+        category: data.category || 'apartment',
+        complexName: data.complexName,
+        livingArea: Number(data.livingArea || 0),
+        floor: Number(data.floor || 0),
+        buildingFloors: Number(data.buildingFloors || 0),
+        livingRooms: Number(data.livingRooms || 0),
+        balconies: Number(data.balconies || 0),
+        totalRooms: Number(data.totalRooms || 1),
+        renovation: data.renovation,
+        installment: Boolean(data.installment),
+        parking: Boolean(data.parking),
+        swimmingPool: Boolean(data.swimmingPool),
+        gym: Boolean(data.gym),
+        elevator: Boolean(data.elevator),
+        images: images,
+        coverImage: coverImage,
+        specs: {
+          beds: Number(data.bedrooms),
+          baths: Number(data.bathrooms),
+          area: Number(data.totalArea)
+        }
       };
 
-      console.log('Sending property data:', propertyData);
+      console.log("Sending data to server:", propertyData);
 
       const response = await fetch('/api/properties', {
         method: 'POST',
@@ -213,28 +196,33 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
         body: JSON.stringify(propertyData),
       });
 
-      const responseData = await response.json();
-      console.log('Response from /api/properties:', responseData);
+      console.log("Response received:", response);
 
       if (!response.ok) {
-        console.error("Error response:", responseData);
-        throw new Error(responseData.error || 'Failed to create property');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create property');
       }
 
-      clearSavedData();
-      onAdd(responseData);
-      onClose();
-      
+      const result = await response.json();
+      console.log("Success response:", result);
+
       toast({
         title: 'Success',
-        description: 'Property added successfully',
+        description: 'Property added successfully'
       });
+
+      clearSavedData();
+      if (onAdd) {
+        onAdd(result);
+      }
+      onClose();
+
     } catch (error) {
       console.error('Error creating property:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to create property',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
@@ -247,7 +235,7 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
     formData.append('file', files[0]);
 
     try {
-      const response = await fetch('/api/upload', {
+      const response = await fetch('/api/upload/s3', {
         method: 'POST',
         body: formData,
       });
@@ -255,10 +243,10 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
       if (!response.ok) throw new Error('Upload failed');
 
       const data = await response.json();
-      // URL должен быть в формате /uploads/filename.jpg
-      const imageUrl = data.url;
-      setImages(prev => [...prev, imageUrl]);
-      console.log('Image uploaded:', imageUrl);
+      setImages(prev => [...prev, data.url]);
+      if (!coverImage) {
+        setCoverImage(data.url);
+      }
     } catch (error) {
       console.error('Upload error:', error);
       toast({
@@ -274,10 +262,8 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
     
     if (value) {
       const number = parseInt(value, 10);
-      // Форматируем число с разделителями
       const formatted = new Intl.NumberFormat('en-US').format(number);
       setPriceInput(formatted);
-      // Устанавливаем реальное числовое значение в форму
       setValue('price', number, { shouldValidate: true });
       console.log('Price changed:', number);
     } else {
@@ -301,7 +287,10 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
            step === 3 ? 'Additional Specs' :
            'Property Photos'}
         </DialogTitle>
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+        <form 
+          onSubmit={handleSubmit(handleFormSubmit)} 
+          className="space-y-6"
+        >
           {step === 1 && (
             <div className="space-y-4">
               <div>
@@ -519,15 +508,12 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
             </div>
           )}
 
-          <div className="flex justify-between mt-4">
+          <div className="flex justify-between mt-6">
             {step > 1 && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  setStep(step - 1);
-                  console.log("Moving back to step:", step - 1);
-                }}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setStep(prev => prev - 1)}
               >
                 Back
               </Button>
@@ -543,9 +529,14 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
               </Button>
             ) : (
               <Button 
-                type="submit"
+                type="button"
                 disabled={isSubmitting || images.length === 0 || !coverImage}
                 className="ml-auto"
+                onClick={async () => {
+                  console.log("Submit button clicked");
+                  const data = form.getValues();
+                  await handleFormSubmit(data);
+                }}
               >
                 {isSubmitting ? 'Adding...' : 'Add Property'}
               </Button>

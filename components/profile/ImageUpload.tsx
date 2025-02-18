@@ -5,65 +5,69 @@ import { Upload, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useToast } from '@/components/ui/use-toast';
 
 interface ImageUploadProps {
   onImagesChange: (images: string[]) => void;
   onCoverImageChange: (coverImage: string) => void;
   maxImages?: number;
+  className?: string;
 }
 
 export function ImageUpload({
   onImagesChange,
   onCoverImageChange,
   maxImages = 10,
+  className = '',
 }: ImageUploadProps) {
   const [images, setImages] = useState<string[]>([]);
   const [coverImage, setCoverImage] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || !files[0]) return;
 
-    if (images.length + files.length > maxImages) {
-      alert(`Максимальное количество фотографий: ${maxImages}`);
-      return;
-    }
+    const file = files[0];
+    const formData = new FormData();
+    formData.append('file', file);
 
     setIsUploading(true);
 
     try {
-      const uploadedUrls = await Promise.all(
-        Array.from(files).map(async (file) => {
-          const formData = new FormData();
-          formData.append("file", file);
+      // Меняем эндпоинт на S3
+      const response = await fetch('/api/upload/s3', {
+        method: 'POST',
+        body: formData,
+      });
 
-          const response = await fetch("/api/upload", {
-            method: "POST",
-            body: formData,
-          });
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
 
-          if (!response.ok) {
-            throw new Error("Upload failed");
-          }
-
-          const data = await response.json();
-          return data.url;
-        })
-      );
-
-      const newImages = [...images, ...uploadedUrls];
+      const data = await response.json();
+      const newImages = [...images, data.url];
       setImages(newImages);
       onImagesChange(newImages);
 
       // Всегда делаем первое загруженное изображение обложкой, если обложка еще не выбрана
       if (!coverImage) {
-        setCoverImage(uploadedUrls[0]);
-        onCoverImageChange(uploadedUrls[0]);
+        setCoverImage(data.url);
+        onCoverImageChange(data.url);
       }
+
+      toast({
+        title: 'Success',
+        description: 'Image uploaded successfully',
+      });
     } catch (error) {
-      console.error("Upload error:", error);
-      alert("Ошибка при загрузке файлов");
+      console.error('Upload error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to upload image',
+        variant: 'destructive',
+      });
     } finally {
       setIsUploading(false);
     }
@@ -89,7 +93,7 @@ export function ImageUpload({
   };
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 ${className}`}>
       <div className="flex items-center justify-center w-full">
         <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -101,7 +105,6 @@ export function ImageUpload({
           <input
             type="file"
             className="hidden"
-            multiple
             accept="image/*"
             onChange={handleFileUpload}
             disabled={isUploading}
@@ -110,7 +113,7 @@ export function ImageUpload({
       </div>
 
       {images.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {images.map((url, index) => (
             <div
               key={url}
@@ -123,10 +126,15 @@ export function ImageUpload({
                 <Image
                   src={url}
                   alt={`Property image ${index + 1}`}
-                  width={300}
-                  height={300}
-                  className="w-full h-full object-cover"
-                  priority
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                  priority={index === 0}
+                  onError={(e) => {
+                    console.error('Image load error:', e);
+                    const imgElement = e.target as HTMLImageElement;
+                    imgElement.src = '/images/placeholder.jpg';
+                  }}
                 />
 
                 {url === coverImage && (

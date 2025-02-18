@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
+import { s3Client, bucketName, s3UploadConfig } from '@/lib/s3';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
 
 export async function POST(request: Request) {
@@ -16,24 +16,46 @@ export async function POST(request: Request) {
     const file = formData.get('file') as File;
     
     if (!file) {
-      return NextResponse.json(
-        { error: 'No file uploaded' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Сохраняем в папку public/uploads
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
-    const filename = `${Date.now()}-${file.name}`;
-    const filepath = join(uploadDir, filename);
-    
-    await writeFile(filepath, buffer);
+    // Создаем уникальное имя файла
+    const uniqueId = crypto.randomBytes(16).toString('hex');
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    const key = `properties/${uniqueId}.${extension}`;
 
-    // Возвращаем путь, который будет использоваться в src для Image
-    return NextResponse.json({ url: `/uploads/${filename}` });
+    // Добавляем ACL при загрузке
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+        Body: buffer,
+        ContentType: file.type,
+        ACL: 'public-read', // Делаем файл публично доступным
+      })
+    );
+
+    // Формируем URL изображения
+    const imageUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+    console.log('File info:', {
+      name: file.name,
+      type: file.type,
+      size: file.size
+    });
+
+    console.log('S3 upload params:', {
+      Bucket: bucketName,
+      Key: key,
+      ContentType: file.type
+    });
+
+    console.log('Generated URL:', imageUrl);
+
+    return NextResponse.json({ url: imageUrl });
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json(

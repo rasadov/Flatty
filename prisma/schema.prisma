@@ -51,7 +51,7 @@ model Property {
   area       Float @default(50) // Например, 50 кв.м.
   type       String @default("apartment") // Дефолтный тип недвижимости
   images        Image[]  // Связь с моделью Image
-  coverImage    String   // Main property image
+  coverImage    String?   // Опциональное поле для главного изображения
   specs         Json?    @default("{}")     // Will store beds, baths, area, etc.
   features      String[] // pool, garden, parking, etc.
   yearBuilt     Int?

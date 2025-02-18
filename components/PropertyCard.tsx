@@ -49,8 +49,13 @@ const PropertyCard = ({ id, ...props }: PropertyCardProps) => {
   const { formatPrice } = useCurrency();
   const { toast } = useToast();
 
-  // Убираем отладочные логи
-  const displayImage = props.coverImage || props.images?.[0] || '/images/placeholder.jpg';
+  const displayImage = props.coverImage 
+    ? props.coverImage
+    : props.images?.length > 0 
+      ? props.images[0]
+      : '/images/placeholder.jpg';
+
+  const isS3Image = displayImage.includes('s3.amazonaws.com');
 
   const handleClick = () => {
     router.push(`/properties/${id}`);
@@ -115,8 +120,6 @@ const PropertyCard = ({ id, ...props }: PropertyCardProps) => {
     ? props.ratings.find(r => r.userId === session.user.id)?.value 
     : undefined;
 
-  
-
   return (
     <div 
       onClick={handleClick}
@@ -126,7 +129,7 @@ const PropertyCard = ({ id, ...props }: PropertyCardProps) => {
         "hover:shadow-lg hover:border-gray-200"
       )}
     >
-      {/* Image Container - фиксированная высота и правильные пропорции */}
+      {/* Image Container */}
       <div className="relative w-full h-[240px] overflow-hidden rounded-t-xl">
         <Image
           src={displayImage}
@@ -134,14 +137,22 @@ const PropertyCard = ({ id, ...props }: PropertyCardProps) => {
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
-          priority={false} // Приоритет только для изображений "над фолдом"
-          quality={75} // Оптимальное качество для карточек
+          priority={false}
+          quality={75}
+          unoptimized={isS3Image}
           onError={(e) => {
-            console.error('Image load error:', e);
-            (e.target as HTMLImageElement).src = '/images/placeholder.jpg';
+            console.log("Property image load error:", e);
+            e.currentTarget.src = '/images/placeholder.jpg';
           }}
         />
         
+        {/* Показываем индикатор только если используется именно coverImage */}
+        {props.coverImage === displayImage && (
+          <div className="absolute top-3 right-3 bg-black/75 text-white text-xs py-1 px-2 rounded">
+            Cover
+          </div>
+        )}
+
         {/* Рейтинг поверх изображения */}
         <div className="absolute top-3 left-3 flex items-center gap-1 bg-white/95 px-2.5 py-1.5 rounded-lg shadow-sm">
           <span className="text-yellow-400 text-base">★</span>
