@@ -8,11 +8,9 @@ import { updateProfileSchema } from '@/lib/validations/user';
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
+    
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return new Response('Unauthorized', { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
@@ -26,24 +24,22 @@ export async function GET() {
         phone: true,
         countryCode: true,
         description: true,
-        // Добавьте другие поля, которые вам нужны
-      },
+        licenseNumber: true,
+        experience: true,
+        companyName: true,
+        establishedYear: true,
+        regions: true,
+      }
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return new Response('User not found', { status: 404 });
     }
 
-    return NextResponse.json(user);
+    return Response.json(user);
   } catch (error) {
-    console.error('Profile fetch error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('Error fetching user profile:', error);
+    return new Response('Internal Server Error', { status: 500 });
   }
 }
 

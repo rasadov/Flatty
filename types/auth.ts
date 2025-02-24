@@ -1,4 +1,4 @@
-export type UserRole = 'buyer' | 'agent' | 'builder' | 'agent-builder' | 'investor';
+export type UserRole = 'buyer' | 'seller' | 'agent_solo' | 'agent_company' | 'builder' | 'admin';
 
 export interface User {
   id: string;
@@ -9,12 +9,18 @@ export interface User {
   phone: string | null;
   countryCode: string | null;
   description: string | null;
-  // Дополнительные поля для агентов
+  // Поля для агентов
   licenseNumber?: string;
   experience?: number;
-  // Дополнительные поля для застройщиков
+  // Поля для компании/застройщика
   companyName?: string;
   regions?: string[];
+  establishedYear?: number;
+  // Лимиты листингов
+  listingLimit?: {
+    count: number;
+    maxLimit: number;
+  };
 }
 
 export interface RegistrationFields {

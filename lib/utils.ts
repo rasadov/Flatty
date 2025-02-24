@@ -18,10 +18,9 @@ export function formatArea(area: number): string {
   return `${area.toLocaleString()} sq ft`;
 }
 
-export function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
+export function formatDate(date: Date) {
+  return new Intl.DateTimeFormat('en-US', {
     month: 'long',
-    year: 'numeric',
-  }).format(date);
+    year: 'numeric'
+  }).format(new Date(date));
 } 

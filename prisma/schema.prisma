@@ -10,87 +10,113 @@ datasource db {
 model User {
   id            String    @id @default(cuid())
   name          String?
-  email         String?   @unique
+  email         String    @unique
   emailVerified DateTime?
-  image         String?
+  image         String? // Это поле хранит URL фото профиля
   password      String?
   role          String    @default("buyer")
   phone         String?
   countryCode   String?
   description   String?
-  
-  // Поля для агента
-  licenseNumber String?
   experience    Int?
-  
-  // Поля для застройщика
-  companyName   String?
-  regions       String[]
+  licenseNumber String?
+  properties    Property[] @relation("UserProperties")
+  listings      Property[] @relation("UserListings")
+
+  // Поля для компании/застройщика
+  companyName     String?
+  regions         String[]
   establishedYear Int?
 
+  // Связи
   accounts      Account[]
   sessions      Session[]
-  favorites     Property[] @relation("UserFavorites")
-  listings      Property[] @relation("UserListings")
+  favorites     Favorite[]
   ratings       Rating[]
   savedSearches SavedSearch[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  complexes     Complex[]     @relation("UserComplexes")
+  listingLimit  UserListingLimit?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
 model Property {
-  id            String   @id @default(cuid())
-  title         String
-  description   String
-  price         Float
-  currency      String   @default("EUR")
-  location      String
-  status        String
-  bedrooms   Int @default(1) // Например, по умолчанию 1 спальня
-  bathrooms  Int @default(1) // По умолчанию 1 ванная
-  area       Float @default(50) // Например, 50 кв.м.
-  type       String @default("apartment") // Дефолтный тип недвижимости
-  images        Image[]  // Связь с моделью Image
-  coverImage    String?   // Опциональное поле для главного изображения
-  specs         Json?    @default("{}")     // Will store beds, baths, area, etc.
-  features      String[] // pool, garden, parking, etc.
-  yearBuilt     Int?
-  furnished     Boolean  @default(false)
-  parking       Boolean  @default(false)
-  petsAllowed   Boolean  @default(false)
-  views         Int      @default(0)
-  latitude      Float?
-  longitude     Float?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  owner         User     @relation("UserListings", fields: [ownerId], references: [id])
-  ownerId       String
-  likedBy       User[]    @relation("UserFavorites")
-  ratings       Rating[]
-  averageRating Float    @default(0)
-  totalRatings  Int      @default(0)
-  category        String    @default("apartment")
-  complexName     String?   // Name of residential complex
-  totalArea       Float     // Total area (m²)
-  livingArea      Float?    // Living area (m²)
-  floor           Int?      // Current floor
-  apartmentStories Int?     // Number of stories in apartment
-  buildingFloors  Int?      // Total building floors
-  livingRooms     Int?      // Number of living rooms
-  balconies       Int       @default(0)
-  totalRooms      Int       @default(1)
-  renovation      String?   // Cosmetic, Designer, European style, Needs renovation
-  installment     Boolean   @default(false)
-  swimmingPool    Boolean   @default(false)
-  gym             Boolean   @default(false)
-  elevator        Boolean   @default(false)
+  id          String @id @default(cuid())
+  title       String
+  description String
+  price       Float
+  currency    String @default("EUR")
+  type        String @default("apartment")
+  status      String @default("for-sale")
+  category    String @default("apartment")
+
+  totalArea      Float @default(0)
+  bedrooms       Int   @default(1)
+  bathrooms      Int   @default(1)
+  livingArea     Float @default(0)
+  floor          Int   @default(0)
+  buildingFloors Int   @default(0)
+  livingRooms    Int   @default(0)
+  balconies      Int   @default(0)
+  totalRooms     Int   @default(1)
+
+  parking      Boolean @default(false)
+  elevator     Boolean @default(false)
+  swimmingPool Boolean @default(false)
+  gym          Boolean @default(false)
+  furnished    Boolean @default(false)
+  installment  Boolean @default(false)
+
+  renovation  String?
+  complexName String?
+
+  coverImage String?
+  images     Image[]
+
+  ownerId     String
+  owner       User     @relation("UserListings", fields: [ownerId], references: [id])
+  agent       User?    @relation("UserProperties", fields: [agentId], references: [id])
+  agentId     String?
+
+  ratings   Rating[] // Обратная связь с Rating
+  complex   Complex? @relation("ComplexProperties", fields: [complexId], references: [id])
+  complexId String?
+
+  propertyRating String? // A, B, B+, C, D
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  latitude  Float?  @default(35.1856)
+  longitude Float?  @default(33.3823)
+
+  moderated      Boolean @default(false)
+  rejected       Boolean @default(false)
+  rejectionReason String?
+
+  favorites     Favorite[]
+  documents     Document[]
+
+  street        String?
+  city          String?
+  district      String?
+  region        String?
+  postalCode    String?
+  buildingNumber String?
+  block         String?
 }
 
 model Image {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   url        String
-  property   Property @relation(fields: [propertyId], references: [id])
-  propertyId String
+  property   Property? @relation(fields: [propertyId], references: [id])
+  propertyId String?
+  complex    Complex?  @relation("ComplexImages", fields: [complexId], references: [id])
+  complexId  String?
+
+  @@index([propertyId])
+  @@index([complexId])
 }
 
 model Rating {
@@ -143,12 +169,46 @@ model VerificationToken {
 model SavedSearch {
   id        String   @id @default(cuid())
   name      String
-  criteria  Json     // Будет хранить все параметры поиска
+  criteria  Json // Будет хранить все параметры поиска
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+model Complex {
+  id           String @id @default(cuid())
+  name         String
+  category     String
+  buildingArea Float
+  livingArea   Float
+  totalObjects Int
+  floors       Int
+  yearBuilt    Int
+
+  parking      Boolean @default(false)
+  installment  Boolean @default(false)
+  swimmingPool Boolean @default(false)
+  elevator     Boolean @default(false)
+
+  description String? @db.Text
+
+  images     Image[] @relation("ComplexImages")
+  coverImage String?
+
+  properties Property[] @relation("ComplexProperties")
+  owner      User       @relation("UserComplexes", fields: [ownerId], references: [id])
+  ownerId    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  moderated      Boolean @default(false)
+  rejected       Boolean @default(false)
+  rejectionReason String?
+
+  favorites     Favorite[]
 }
 
 enum Role {
@@ -161,4 +221,56 @@ enum Status {
   AVAILABLE
   SOLD
   RENTED
-} 
+}
+
+enum UserRole {
+  buyer
+  seller
+  agent_solo
+  agent_company
+  builder
+  admin
+}
+
+model InviteCode {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  role      UserRole
+  used      Boolean  @default(false)
+  usedBy    String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime?
+}
+
+model UserListingLimit {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  count     Int      @default(0)
+  maxLimit  Int      @default(3) // По умолчанию для seller
+  updatedAt DateTime @updatedAt
+}
+
+model Favorite {
+  id          String    @id @default(cuid())
+  userId      String
+  propertyId  String?
+  complexId   String?
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property    Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  complex     Complex?  @relation(fields: [complexId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+  @@unique([userId, complexId])
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  url       String
+  type      String   // 'image' или 'pdf'
+  property  Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  propertyId String
+  createdAt DateTime @default(now())
+}

@@ -1,43 +1,87 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 export const propertySchema = z.object({
+  // Обязательные поля
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
-  price: z.number().min(1, 'Price is required'),
-  currency: z.enum(['EUR', 'USD', 'GBP']).default('EUR'),
-  location: z.string().min(1, 'Location is required'),
-  type: z.string().min(1, 'Property type is required'),
-  status: z.enum(['for-rent', 'for-sale']),
+  price: z.number().min(0, 'Price must be positive'),
+  currency: z.enum(['EUR', 'USD', 'GBP']),
+  type: z.enum(['apartment', 'house', 'villa', 'land']),
+  status: z.enum(['for-sale', 'for-rent']),
+  category: z.enum(['apartment', 'house', 'villa', 'land']),
   
-  // Обязательные поля
-  totalArea: z.number().min(1, 'Total area is required'),
-  bedrooms: z.number().min(1, 'Number of bedrooms is required'),
-  bathrooms: z.number().min(1, 'Number of bathrooms is required'),
-  area: z.number().min(0, 'Area cannot be negative'),
-  specs: z.object({
-    beds: z.number(),
-    baths: z.number(),
-    area: z.number(),
-  }),
+  // Адресные поля - все опциональные
+  street: z.string().optional(),
+  city: z.string().optional(),
+  district: z.string().optional(),
+  region: z.string().optional(),
+  postalCode: z.string().optional(),
+  buildingNumber: z.string().optional(),
+  block: z.string().optional(),
   
-  // Остальные поля...
-  category: z.enum(['apartment', 'house', 'villa', 'land']).default('apartment'),
-  complexName: z.string().optional(),
-  livingArea: z.number().optional(),
-  floor: z.number().min(0).optional(),
-  apartmentStories: z.number().min(1).optional(),
-  buildingFloors: z.number().min(1).optional(),
-  livingRooms: z.number().min(0).optional(),
-  balconies: z.number().min(0).default(0),
-  totalRooms: z.number().min(1).default(1),
-  renovation: z.enum(['cosmetic', 'designer', 'european', 'needs-renovation']).optional(),
-  installment: z.boolean().default(false),
+  // Числовые поля - обязательные с дефолтным значением 0
+  totalArea: z.preprocess(
+    (val) => Number(val) || 0,
+    z.number().min(0)
+  ),
+  bedrooms: z.preprocess(
+    (val) => Number(val) || 0,
+    z.number().min(0)
+  ),
+  bathrooms: z.preprocess(
+    (val) => Number(val) || 0,
+    z.number().min(0)
+  ),
+
+  // Числовые поля - опциональные
+  livingArea: z.preprocess(
+    (val) => Number(val) || 0,
+    z.number().min(0)
+  ).optional(),
+  floor: z.preprocess(
+    (val) => Number(val) || 0,
+    z.number().min(0)
+  ).optional(),
+  buildingFloors: z.preprocess(
+    (val) => Number(val) || 0,
+    z.number().min(0)
+  ).optional(),
+  livingRooms: z.preprocess(
+    (val) => Number(val) || 0,
+    z.number().min(0)
+  ).optional(),
+  balconies: z.preprocess(
+    (val) => Number(val) || 0,
+    z.number().min(0)
+  ).optional(),
+  totalRooms: z.preprocess(
+    (val) => Number(val) || 0,
+    z.number().min(0)
+  ).optional(),
+
+  // Булевы поля с дефолтным значением false
   parking: z.boolean().default(false),
+  elevator: z.boolean().default(false),
   swimmingPool: z.boolean().default(false),
   gym: z.boolean().default(false),
-  elevator: z.boolean().default(false),
-  yearBuilt: z.number().optional(),
   furnished: z.boolean().default(false),
-  images: z.array(z.string()).min(1, 'At least one image is required'),
-  coverImage: z.string().min(1, 'Cover image is required'),
-}); 
+  installment: z.boolean().default(false),
+
+  // Опциональные поля
+  renovation: z.enum(['cosmetic', 'designer', 'european', 'needs-renovation']).optional(),
+  complexName: z.string().optional(),
+  
+  // Обязательные поля
+  images: z.array(z.string()),
+  coverImage: z.string(),
+  latitude: z.number(),
+  longitude: z.number(),
+
+  // Опциональные документы
+  documents: z.array(z.object({
+    url: z.string(),
+    type: z.string()
+  })).optional(),
+});
+
+export type PropertyFormData = z.infer<typeof propertySchema>; 

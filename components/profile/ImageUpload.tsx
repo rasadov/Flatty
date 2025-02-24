@@ -27,45 +27,70 @@ export function ImageUpload({
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || !files[0]) return;
+    if (!files) return;
 
-    const file = files[0];
-    const formData = new FormData();
-    formData.append('file', file);
+    // Проверяем общий размер файлов
+    const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
+    const maxTotalSize = 10 * 1024 * 1024; // 10MB
+
+    if (totalSize > maxTotalSize) {
+      toast({
+        title: 'Error',
+        description: 'Total size of all files cannot exceed 10MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Проверяем количество файлов
+    if (images.length + files.length > maxImages) {
+      toast({
+        title: 'Error',
+        description: `You can upload maximum ${maxImages} images`,
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setIsUploading(true);
+    const uploadedUrls: string[] = [];
 
     try {
-      // Меняем эндпоинт на S3
-      const response = await fetch('/api/upload/s3', {
-        method: 'POST',
-        body: formData,
-      });
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append('file', file);
 
-      if (!response.ok) {
-        throw new Error('Upload failed');
+        const response = await fetch('/api/upload/s3', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) throw new Error('Upload failed');
+
+        const data = await response.json();
+        uploadedUrls.push(data.url);
       }
 
-      const data = await response.json();
-      const newImages = [...images, data.url];
+      // Обновляем состояние после успешной загрузки всех файлов
+      const newImages = [...images, ...uploadedUrls];
       setImages(newImages);
       onImagesChange(newImages);
 
-      // Всегда делаем первое загруженное изображение обложкой, если обложка еще не выбрана
-      if (!coverImage) {
-        setCoverImage(data.url);
-        onCoverImageChange(data.url);
+      // Устанавливаем первое изображение как обложку, если обложка еще не выбрана
+      if (!coverImage && uploadedUrls.length > 0) {
+        setCoverImage(uploadedUrls[0]);
+        onCoverImageChange(uploadedUrls[0]);
       }
 
       toast({
         title: 'Success',
-        description: 'Image uploaded successfully',
+        description: `Successfully uploaded ${uploadedUrls.length} image${uploadedUrls.length > 1 ? 's' : ''}`,
       });
     } catch (error) {
       console.error('Upload error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to upload image',
+        description: 'Failed to upload images',
         variant: 'destructive',
       });
     } finally {
@@ -101,11 +126,15 @@ export function ImageUpload({
             <p className="mb-2 text-sm text-gray-500">
               {isUploading ? "Загрузка..." : "Нажмите для загрузки"}
             </p>
+            <p className="text-xs text-gray-500">
+              Up to {maxImages} images (max. 10MB total)
+            </p>
           </div>
           <input
             type="file"
             className="hidden"
             accept="image/*"
+            multiple
             onChange={handleFileUpload}
             disabled={isUploading}
           />

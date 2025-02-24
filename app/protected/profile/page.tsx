@@ -6,8 +6,13 @@ import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { ProfileCard } from '@/components/profile/ProfileCard';
 import { ProfileTabs } from '@/components/profile/ProfileTabs';
 import PropertyList from '@/components/profile/PropertyList';
+import { ComplexList } from '@/components/profile/ComplexList';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useEffect, useState } from 'react';
 import { User } from '@/types/auth';
+import { ProfileProperties } from '@/components/profile/ProfileProperties';
+import { ProfileInfo } from '@/components/profile/ProfileInfo';
+import { BuyerDashboard } from '@/components/profile/BuyerDashboard';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -43,33 +48,10 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#F9F8FF]">
-      <div className="container py-8">
-        {/* Breadcrumbs */}
-        <Breadcrumb 
-          items={[
-            { label: 'Home', href: '/' },
-            { label: 'Profile', href: '/protected/profile', active: true }
-          ]} 
-        />
-
-        {/* Верхняя секция с профилем и табами */}
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
-          {/* Profile Card */}
-          <div className="lg:col-span-4">
-            <ProfileCard user={userData} />
-          </div>
-
-          {/* Profile Content */}
-          <div className="lg:col-span-8">
-            <ProfileTabs />
-          </div>
-        </div>
-
-        {/* Секция со списком недвижимости */}
-        <div className="mt-8">
-          <h2 className="text-2xl font-semibold mb-6">My Objects</h2>
-          <PropertyList />
-        </div>
+      <div className="container py-8 space-y-8">
+        <ProfileInfo />
+        <ProfileProperties />
+        <BuyerDashboard />
       </div>
     </div>
   );

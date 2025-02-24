@@ -8,13 +8,24 @@ export default function Loading() {
         {/* Content */}
         <div className="container mx-auto px-4 py-8">
           <div className="grid lg:grid-cols-2 gap-8">
-            {/* Image Skeleton */}
+            {/* Image Gallery Skeleton */}
             <div className="space-y-4">
+              {/* Основное изображение */}
               <div className="aspect-[16/9] bg-gray-200 rounded-xl" />
-              <div className="grid grid-cols-4 gap-2">
-                {[1,2,3,4].map((i) => (
-                  <div key={i} className="aspect-square bg-gray-200 rounded-lg" />
-                ))}
+              
+              {/* Галерея миниатюр */}
+              <div className="relative">
+                <div className="grid grid-cols-6 gap-2">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div 
+                      key={i} 
+                      className="aspect-square bg-gray-200 rounded-lg hover:opacity-75 transition-opacity cursor-pointer"
+                    />
+                  ))}
+                </div>
+                {/* Индикаторы навигации */}
+                <div className="absolute -right-4 top-1/2 -translate-y-1/2 bg-white rounded-full w-8 h-8" />
+                <div className="absolute -left-4 top-1/2 -translate-y-1/2 bg-white rounded-full w-8 h-8" />
               </div>
             </div>
 

@@ -151,6 +151,7 @@ export function SavedSearches() {
         onConfirm={() => deleteId && handleDelete(deleteId)}
         title="Delete Saved Search"
         message="Are you sure you want to delete this saved search? This action cannot be undone."
+        confirmText="Delete"
       />
     </div>
   );

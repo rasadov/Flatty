@@ -22,29 +22,35 @@ const roles: { value: UserRole; label: string; available: boolean; description: 
     description: 'Looking to buy or rent a property'
   },
   { 
-    value: 'agent', 
-    label: 'Agent', 
+    value: 'seller', 
+    label: 'Seller', 
     available: true,
-    description: 'Professional real estate agent'
+    description: 'Want to sell or rent out your property (max 3 listings)'
+  },
+  { 
+    value: 'agent_solo', 
+    label: 'Individual Agent', 
+    available: true,
+    description: 'Professional real estate agent working independently (max 30 listings)'
+  },
+  { 
+    value: 'agent_company', 
+    label: 'Agency Company', 
+    available: true,
+    description: 'Real estate agency with multiple agents (max 100 listings)'
   },
   { 
     value: 'builder', 
-    label: 'Builder', 
+    label: 'Builder/Construction', 
     available: true,
-    description: 'Property developer or construction company'
+    description: 'Property developer or construction company (no limits for Complexes and Buildings)'
   },
-  { 
-    value: 'agent-builder', 
-    label: 'Agent-Builder', 
-    available: false,
-    description: 'Combined agent and builder services (Coming Soon)'
-  },
-  { 
-    value: 'investor', 
-    label: 'Investor', 
-    available: false,
-    description: 'Looking to invest in properties (Coming Soon)'
-  },
+  // { 
+  //   value: 'moderator', 
+  //   label: 'Moderator', 
+  //   available: true,
+  //   description: 'Site moderator (requires invite code)'
+  // },
 ];
 
 // Добавим коды стран
@@ -54,7 +60,21 @@ const countryCodes = [
   { value: '+1', label: 'USA (+1)' },
   { value: '+7', label: 'Russia (+7)' },
   { value: '+49', label: 'Germany (+49)' },
-  // Добавьте другие страны по необходимости
+  { value: '+33', label: 'France (+33)' },
+  { value: '+34', label: 'Spain (+34)' },
+  { value: '+39', label: 'Italy (+39)' },
+  { value: '+90', label: 'Turkey (+90)' },
+  { value: '+971', label: 'UAE (+971)' },
+  { value: '+30', label: 'Greece (+30)' },
+  { value: '+380', label: 'Ukraine (+380)' },
+  { value: '+48', label: 'Poland (+48)' },
+  { value: '+46', label: 'Sweden (+46)' },
+  { value: '+47', label: 'Norway (+47)' },
+  { value: '+358', label: 'Finland (+358)' },
+  { value: '+45', label: 'Denmark (+45)' },
+  { value: '+31', label: 'Netherlands (+31)' },
+  { value: '+32', label: 'Belgium (+32)' },
+  { value: '+41', label: 'Switzerland (+41)' }
 ];
 
 const RegisterForm = () => {
@@ -63,15 +83,17 @@ const RegisterForm = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [descriptionLength, setDescriptionLength] = useState(0);
+  const [showInviteCode, setShowInviteCode] = useState(false);
+  const [inviteCode, setInviteCode] = useState('');
 
   const formSchema = z.object({
     email: z.string().email('Invalid email address'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     name: z.string().min(2, 'Name must be at least 2 characters'),
-    role: z.enum(['buyer', 'agent', 'builder', 'agent-builder', 'investor']),
+    role: z.enum(['buyer', 'seller', 'agent_solo', 'agent_company', 'builder', 'moderator']),
     // Условные поля для агента
-    licenseNumber: selectedRole === 'agent' ? z.string().min(5, 'License number must be at least 5 characters') : z.string().optional(),
-    experience: selectedRole === 'agent' ? z.number().min(0, 'Experience must be a positive number') : z.number().optional(),
+    licenseNumber: selectedRole === 'agent_solo' ? z.string().min(5, 'License number must be at least 5 characters') : z.string().optional(),
+    experience: selectedRole === 'agent_solo' ? z.number().min(0, 'Experience must be a positive number') : z.number().optional(),
     // Условные поля для застройщика
     companyName: selectedRole === 'builder' ? z.string().min(2, 'Company name must be at least 2 characters') : z.string().optional(),
     regions: selectedRole === 'builder' ? z.array(z.string()).min(1, 'Select at least one region') : z.array(z.string()).optional(),
@@ -83,6 +105,7 @@ const RegisterForm = () => {
     description: z.string()
       .max(500, 'Description must be less than 500 characters')
       .optional(),
+    registrationNumber: selectedRole === 'agent_company' ? z.string().min(5, 'Registration number must be at least 5 characters') : z.string().optional(),
   });
 
   const {
@@ -119,7 +142,7 @@ const RegisterForm = () => {
       setError(null);
       setIsSubmitting(true);
 
-      const formattedPhone = `${values.countryCode}${values.phone}`;
+      const formattedPhone = values.phone;
 
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -128,6 +151,21 @@ const RegisterForm = () => {
           ...values,
           role: selectedRole,
           phone: formattedPhone,
+          countryCode: values.countryCode,
+          description: values.description,
+          // Другие поля в зависимости от роли
+          ...(selectedRole === 'agent_solo' && {
+            licenseNumber: values.licenseNumber,
+            experience: values.experience
+          }),
+          ...(selectedRole === 'agent_company' && {
+            companyName: values.companyName
+          }),
+          ...(selectedRole === 'builder' && {
+            companyName: values.companyName,
+            regions: values.regions,
+            establishedYear: values.establishedYear
+          })
         }),
       });
       
@@ -162,10 +200,12 @@ const RegisterForm = () => {
       case 2:
         return ['name', 'email', 'password'];
       case 3:
-        return selectedRole === 'agent' 
+        return selectedRole === 'agent_solo' 
           ? ['licenseNumber', 'experience', 'description']
           : selectedRole === 'builder'
           ? ['companyName', 'regions', 'establishedYear', 'description']
+          : selectedRole === 'agent_company'
+          ? ['companyName', 'registrationNumber', 'description']
           : ['description'];
       default:
         return [];
@@ -191,6 +231,11 @@ const RegisterForm = () => {
     setDescriptionLength(value.length);
     register('description').onChange(e);
   };
+
+  // Показываем поле для кода приглашения, если выбрана роль модератора
+  useEffect(() => {
+    setShowInviteCode(selectedRole === 'moderator');
+  }, [selectedRole]);
 
   return (
     <div className="space-y-4 max-w-md mx-auto my-12">
@@ -354,18 +399,20 @@ const RegisterForm = () => {
           <div className="space-y-4">
             <div className="text-center">
               <h1 className="text-xl font-bold">
-                {selectedRole === 'agent' ? 'Agent Details' : 
+                {selectedRole === 'agent_solo' ? 'Agent Details' : 
                  selectedRole === 'builder' ? 'Company Details' : 
+                 selectedRole === 'agent_company' ? 'Agency Details' :
                  'Additional Information'}
               </h1>
               <p className="text-gray-500 mt-1 text-sm">
-                {selectedRole === 'agent' ? 'Provide your professional details' :
+                {selectedRole === 'agent_solo' ? 'Provide your professional details' :
                  selectedRole === 'builder' ? 'Tell us about your company' :
+                 selectedRole === 'agent_company' ? 'Tell us about your agency' :
                  'Tell us more about yourself'}
               </p>
             </div>
 
-            {selectedRole === 'agent' && (
+            {selectedRole === 'agent_solo' && (
               <div className="space-y-3">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
@@ -434,19 +481,45 @@ const RegisterForm = () => {
               </div>
             )}
 
+            {selectedRole === 'agent_company' && (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Company Name
+                  </label>
+                  <Input
+                    {...register('companyName')}
+                    error={errors.companyName?.message}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Company Registration Number
+                  </label>
+                  <Input
+                    {...register('registrationNumber')}
+                    error={errors.registrationNumber?.message}
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
-                About {selectedRole === 'agent' ? 'Your Experience' : 
+                About {selectedRole === 'agent_solo' ? 'Your Experience' : 
                       selectedRole === 'builder' ? 'Your Company' : 
+                      selectedRole === 'agent_company' ? 'Your Agency' :
                       'Yourself'}
               </label>
               <Textarea
                 {...register('description')}
                 placeholder={
-                  selectedRole === 'agent' 
+                  selectedRole === 'agent_solo' 
                     ? "Describe your experience and expertise in real estate..." 
                     : selectedRole === 'builder'
                     ? "Tell about your company and its achievements..."
+                    : selectedRole === 'agent_company'
+                    ? "Tell about your agency and its services..."
                     : "Share a bit about yourself and what you're looking for..."
                 }
                 rows={4}
@@ -459,6 +532,22 @@ const RegisterForm = () => {
                 <span>{500 - descriptionLength} characters remaining</span>
               </p>
             </div>
+          </div>
+        )}
+
+        {showInviteCode && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Invite Code
+              <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="text"
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value)}
+              placeholder="Enter invite code"
+              required
+            />
           </div>
         )}
 

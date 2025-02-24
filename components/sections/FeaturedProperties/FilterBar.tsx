@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Select from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import Button from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { SlidersHorizontal } from 'lucide-react';
 import { 
   propertyTypes, 
@@ -21,11 +21,11 @@ export type FilterOptions = {
 };
 
 interface FilterBarProps {
-  onFilterChange: (filters: FilterOptions) => void;
   filters: FilterOptions;
+  onFilterChange: (filters: FilterOptions) => void;
 }
 
-const FilterBar = ({ onFilterChange, filters }: FilterBarProps) => {
+export function FilterBar({ filters, onFilterChange }: FilterBarProps) {
   const { currency, convertPrice } = useCurrency();
   const [showFilters, setShowFilters] = useState(false);
   const [customPriceRange, setCustomPriceRange] = useState([0, 1000000]);
@@ -38,7 +38,7 @@ const FilterBar = ({ onFilterChange, filters }: FilterBarProps) => {
   };
 
   const handlePriceRangeChange = (min: number, max: number) => {
-    // Конвертируем цены обратно в базовую валюту (GBP) перед отправкой фильтров
+    // Конвертируем цены обратно в базовую валюту (EUR) перед отправкой фильтров
     const baseMin = min / currency.rate;
     const baseMax = max / currency.rate;
     setCustomPriceRange([baseMin, baseMax]);
@@ -60,36 +60,48 @@ const FilterBar = ({ onFilterChange, filters }: FilterBarProps) => {
   return (
     <div className="bg-white rounded-lg shadow-sm">
       <div className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-          <Select 
-            label="Category"
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Filters</h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <SlidersHorizontal className="h-4 w-4 mr-2" />
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </Button>
+        </div>
+
+        <div className={`grid gap-4 ${showFilters ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4' : 'grid-cols-2 md:grid-cols-4'}`}>
+          <Select
             value={filters.propertyType}
             onChange={(e) => handleChange('propertyType', e.target.value)}
           >
-            {propertyTypes.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+            <option value="">Property Type</option>
+            {propertyTypes.map(type => (
+              <option key={type.value} value={type.value}>
+                {type.label}
               </option>
             ))}
           </Select>
 
-          <Select 
-            label="Price Range"
+          <Select
             value={filters.priceRange}
             onChange={(e) => handleChange('priceRange', e.target.value)}
           >
-            {priceRanges.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+            <option value="">Price Range</option>
+            {priceRanges.map(range => (
+              <option key={range.value} value={range.value}>
+                {range.label}
               </option>
             ))}
           </Select>
 
-          <Select 
-            label="Bedrooms"
+          <Select
             value={filters.bedrooms}
             onChange={(e) => handleChange('bedrooms', e.target.value)}
           >
+            <option value="">Bedrooms</option>
             {bedroomOptions.map(option => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -97,129 +109,21 @@ const FilterBar = ({ onFilterChange, filters }: FilterBarProps) => {
             ))}
           </Select>
 
-          <Select 
-            label="Sort By"
+          <Select
             value={filters.sortBy}
             onChange={(e) => handleChange('sortBy', e.target.value)}
           >
+            <option value="">Sort By</option>
             {sortOptions.map(option => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
           </Select>
-
-          <div className="flex gap-2 items-end">
-            <Button 
-              type="button" 
-              variant="outline"
-              className="flex-1 flex items-center justify-center gap-2"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              <span className="hidden sm:inline">Filters</span>
-            </Button>
-            <Button 
-              type="button" 
-              className="flex-1"
-              onClick={handleSearch}
-            >
-              Search
-            </Button>
-          </div>
         </div>
-      </div>
 
-      {showFilters && (
-        <div className="border-t p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <Select label="Area">
-              <option value="">All Areas</option>
-              <option value="central">Central London</option>
-              <option value="north">North London</option>
-              <option value="south">South London</option>
-              <option value="east">East London</option>
-              <option value="west">West London</option>
-            </Select>
-
-            <Select label="City">
-              <option value="">All Cities</option>
-              <option value="london">London</option>
-              <option value="manchester">Manchester</option>
-              <option value="birmingham">Birmingham</option>
-              <option value="liverpool">Liverpool</option>
-              <option value="leeds">Leeds</option>
-            </Select>
-
-            <Select label="Apartment's Size">
-              <option value="">Any Size</option>
-              <option value="0-500">0 - 500 sq ft</option>
-              <option value="501-1000">501 - 1000 sq ft</option>
-              <option value="1001+">1000+ sq ft</option>
-            </Select>
-
-            <Select label="Property Status">
-              <option value="">Any Status</option>
-              <option value="ready">Ready to Move</option>
-              <option value="under-construction">Under Construction</option>
-              <option value="off-plan">Off Plan</option>
-            </Select>
-
-            <Select label="Furnished">
-              <option value="">Any</option>
-              <option value="furnished">Furnished</option>
-              <option value="unfurnished">Unfurnished</option>
-              <option value="partial">Partially Furnished</option>
-            </Select>
-
-            <Select label="Amenities">
-              <option value="">Any</option>
-              <option value="parking">Parking</option>
-              <option value="gym">Gym</option>
-              <option value="pool">Swimming Pool</option>
-              <option value="security">24/7 Security</option>
-            </Select>
-
-            <Select label="View">
-              <option value="">Any View</option>
-              <option value="city">City View</option>
-              <option value="park">Park View</option>
-              <option value="river">River View</option>
-              <option value="garden">Garden View</option>
-            </Select>
-
-            <Select label="Floor Level">
-              <option value="">Any Floor</option>
-              <option value="low">Low Floor (1-5)</option>
-              <option value="mid">Mid Floor (6-15)</option>
-              <option value="high">High Floor (16+)</option>
-              <option value="penthouse">Penthouse</option>
-            </Select>
-
-            <Select label="Completion">
-              <option value="">Any</option>
-              <option value="ready">Ready</option>
-              <option value="3months">Within 3 Months</option>
-              <option value="6months">Within 6 Months</option>
-              <option value="1year">Within 1 Year</option>
-            </Select>
-
-            <Select label="Building Age">
-              <option value="">Any Age</option>
-              <option value="new">New Building</option>
-              <option value="0-5">0-5 Years</option>
-              <option value="5-10">5-10 Years</option>
-              <option value="10+">10+ Years</option>
-            </Select>
-
-            <Select label="Layout Type">
-              <option value="">Any Layout</option>
-              <option value="studio">Studio</option>
-              <option value="open">Open Plan</option>
-              <option value="split">Split Level</option>
-              <option value="duplex">Duplex</option>
-            </Select>
-
+        {showFilters && (
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Custom Price Range
@@ -253,11 +157,39 @@ const FilterBar = ({ onFilterChange, filters }: FilterBarProps) => {
                 />
               </div>
             </div>
+
+            <Select label="Property Status">
+              <option value="">Any Status</option>
+              <option value="for-sale">For Sale</option>
+              <option value="for-rent">For Rent</option>
+            </Select>
+
+            <Select label="Property Category">
+              <option value="">Any Category</option>
+              <option value="apartment">Apartment</option>
+              <option value="house">House</option>
+              <option value="villa">Villa</option>
+              <option value="land">Land</option>
+            </Select>
+
+            <Select label="Layout Type">
+              <option value="">Any Layout</option>
+              <option value="studio">Studio</option>
+              <option value="open">Open Plan</option>
+              <option value="split">Split Level</option>
+              <option value="duplex">Duplex</option>
+            </Select>
           </div>
-        </div>
-      )}
+        )}
+
+        {showFilters && (
+          <div className="mt-4 flex justify-end">
+            <Button onClick={handleSearch}>
+              Apply Filters
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
-};
-
-export default FilterBar; 
+} 

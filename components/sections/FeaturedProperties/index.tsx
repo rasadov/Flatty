@@ -1,21 +1,29 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import PropertyCard from '@/components/PropertyCard';
-import FilterBar from './FilterBar';
+import React, { useState } from 'react';
+import { PropertyCard } from '@/components/PropertyCard';
+import { FilterBar } from './FilterBar';
 import { FilterOptions } from './types';
 import { Property } from '@/types/property';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
-const FeaturedProperties = () => {
+interface FeaturedPropertiesProps {
+  initialProperties: Property[];
+}
+
+export function FeaturedProperties({ initialProperties }: FeaturedPropertiesProps) {
+  // Фильтруем только модерированные и не отклоненные объекты при инициализации
+  const [properties] = useState<Property[]>(
+    initialProperties.filter(p => p.moderated && !p.rejected)
+  );
+  
   const [filters, setFilters] = useState<FilterOptions>({
     propertyType: '',
     priceRange: '',
     bedrooms: '',
     sortBy: ''
   });
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const filteredProperties = React.useMemo(() => {
     return properties
@@ -27,11 +35,10 @@ const FeaturedProperties = () => {
 
         // Фильтр по спальням
         if (filters.bedrooms && filters.bedrooms !== 'all') {
-          const beds = property.specs?.beds;
           if (filters.bedrooms === '4+') {
-            if (!beds || beds < 4) return false;
+            if (property.bedrooms < 4) return false;
           } else {
-            if (beds !== parseInt(filters.bedrooms)) return false;
+            if (property.bedrooms !== parseInt(filters.bedrooms)) return false;
           }
         }
 
@@ -61,79 +68,38 @@ const FeaturedProperties = () => {
       });
   }, [properties, filters]);
 
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        const response = await fetch('/api/properties');
-        if (!response.ok) throw new Error('Failed to fetch properties');
-        const data = await response.json();
-        setProperties(data);
-      } catch (error) {
-        console.error('Error:', error);
-        setError('Failed to fetch properties');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProperties();
-  }, []);
-
-  if (isLoading) {
-    return <div>Загрузка...</div>;
-  }
-
-  if (error) {
-    return <div>Ошибка при загрузке свойств: {error}</div>;
-  }
+  const displayProperties = filteredProperties.slice(0, 6);
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <FilterBar 
-        filters={filters}
-        onFilterChange={setFilters}
-      />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-12">
-        {filteredProperties.map((property) => (
-          <PropertyCard
-            key={property.id}
-            id={property.id}
-            title={property.title}
-            description={property.description}
-            price={property.price}
-            location={property.location}
-            type={property.type}
-            status={property.status}
-          
-            totalArea={property.totalArea}
-            livingArea={property.livingArea}
-            floor={property.floor}
-            apartmentStories={property.apartmentStories}
-            buildingFloors={property.buildingFloors}
-            livingRooms={property.livingRooms}
-            bedrooms={property.bedrooms}
-            bathrooms={property.bathrooms}
-            balconies={property.balconies}
-            totalRooms={property.totalRooms}
-            renovation={property.renovation}
-            coverImage={property.coverImage}
-            images={property.images}
-            ratings={property.ratings || []}
-            totalRatings={property.ratings?.length || 0}
-            likedBy={property.likedBy || []}
-            property={property}
-          />
-        ))}
-      </div>
-
-      {filteredProperties.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-500">Не найдено объектов, соответствующих критериям поиска</p>
+    <section className="py-4">
+      <div className="container">
+        <div className="flex justify-between items-center mb-0 sm:mb-8">
+         
+          <Link  href="/properties" prefetch>
+            <Button variant="outline" className='w-[100px]'>View All</Button>
+          </Link>
         </div>
-      )}
-    </div>
-  );
-};
 
-export default FeaturedProperties; 
+        <FilterBar 
+          filters={filters}
+          onFilterChange={setFilters}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+          {displayProperties.map((property) => (
+            <PropertyCard
+              key={property.id}
+              property={property}
+            />
+          ))}
+        </div>
+
+        {filteredProperties.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No properties found matching your criteria</p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+} 

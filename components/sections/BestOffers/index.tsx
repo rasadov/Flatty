@@ -7,7 +7,7 @@ import Image from 'next/image';
 const BestOffers = () => {
   return (
     <Section>
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-4">
         <h2 className="text-3xl font-bold text-gray-900 mb-4">
           Best Offers
         </h2>

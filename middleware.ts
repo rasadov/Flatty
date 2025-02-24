@@ -24,7 +24,9 @@ export default withAuth(
 
 export const config = {
   matcher: [
+    '/profile/:path*',
     '/protected/:path*',
+    '/api/:path*',
     '/auth/signin',
     '/auth/register',
   ]

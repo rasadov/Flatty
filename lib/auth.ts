@@ -30,13 +30,24 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
-        session.user.description = token.description as string | null;
-        session.user.phone = token.phone as string | null;
-        session.user.countryCode = token.countryCode as string | null;
+    session: async ({ session, user }) => {
+      if (session?.user) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: session.user.email! },
+          select: {
+            id: true,
+            role: true,
+            description: true,
+            phone: true,
+            countryCode: true,
+          }
+        });
+
+        session.user.id = dbUser?.id;
+        session.user.role = dbUser?.role;
+        session.user.description = dbUser?.description;
+        session.user.phone = dbUser?.phone;
+        session.user.countryCode = dbUser?.countryCode;
       }
       return session;
     }

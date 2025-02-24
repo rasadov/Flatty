@@ -1,65 +1,59 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { s3Client, bucketName, s3UploadConfig } from '@/lib/s3';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
-import crypto from 'crypto';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+// Новый способ конфигурации
+export const runtime = 'nodejs'; // вместо 'edge'
+export const dynamic = 'force-dynamic';
+// Максимальный размер файла (в байтах)
+export const maxDuration = 10; // в секундах
+
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION!,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+
+// Функция для генерации случайного имени файла
+async function generateRandomString(length: number): Promise<string> {
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+}
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const formData = await request.formData();
     const file = formData.get('file') as File;
     
     if (!file) {
-      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'No file provided' },
+        { status: 400 }
+      );
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    // Генерируем уникальное имя файла используя Web Crypto API
+    const fileExtension = file.name.split('.').pop();
+    const randomName = await generateRandomString(16);
+    const key = `properties/${randomName}.${fileExtension}`;
 
-    // Создаем уникальное имя файла
-    const uniqueId = crypto.randomBytes(16).toString('hex');
-    const extension = file.name.split('.').pop()?.toLowerCase();
-    const key = `properties/${uniqueId}.${extension}`;
-
-    // Добавляем ACL при загрузке
-    await s3Client.send(
-      new PutObjectCommand({
-        Bucket: bucketName,
-        Key: key,
-        Body: buffer,
-        ContentType: file.type,
-        ACL: 'public-read', // Делаем файл публично доступным
-      })
-    );
-
-    // Формируем URL изображения
-    const imageUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-
-    console.log('File info:', {
-      name: file.name,
-      type: file.type,
-      size: file.size
-    });
-
-    console.log('S3 upload params:', {
-      Bucket: bucketName,
+    const command = new PutObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME!,
       Key: key,
-      ContentType: file.type
+      ContentType: file.type,
     });
 
-    console.log('Generated URL:', imageUrl);
+    const signedUrl = await getSignedUrl(s3Client, command);
+    const url = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
 
-    return NextResponse.json({ url: imageUrl });
+    return NextResponse.json({ url, signedUrl });
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json(
-      { error: 'Upload failed' },
+      { error: 'Failed to upload file' },
       { status: 500 }
     );
   }

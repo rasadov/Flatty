@@ -24,19 +24,19 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-[#F9F8FF] border-t-4 border-[#ffffff] ">
+    <footer className="bg-[#F9F8FF] text-center sm:text-left border-t-4 border-[#ffffff] ">
       <div className="container mx-auto px-4 py-16">
         {/* Top Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           {/* Company Info */}
-          <div className="space-y-6">
+          <div className="space-y-6 hidden sm:block">
             <Link href="/" className="block">
               <Logo />
             </Link>
             <p className="text-gray-600">
               Find your perfect home with our comprehensive property listings and expert guidance.
             </p>
-            <div className="space-y-4">
+            <div className="space-y-4 hidden sm:block">
               <div className="flex items-center gap-3 text-gray-600">
                 <MapPin className="w-5 h-5 text-primary" />
                 <span>123 Property Street</span>

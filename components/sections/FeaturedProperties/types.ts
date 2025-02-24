@@ -1,6 +1,6 @@
 export interface FilterOptions {
-  priceRange: string;
   propertyType: string;
+  priceRange: string;
   bedrooms: string;
   sortBy: string;
 } 

@@ -1,32 +1,37 @@
 "use client";
 
-import * as React from "react";
+import React, { forwardRef } from 'react';
 import { cn } from "@/lib/utils";
 
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
-  error?: string;
+  error?: boolean;
 }
 
-const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, children, label, error, ...props }, ref) => {
+const Select = forwardRef<HTMLSelectElement, SelectProps>(
+  ({ label, error, className, children, ...props }, ref) => {
     return (
-      <div className="space-y-1">
+      <div className="w-full">
         {label && (
-          <label className="text-sm font-medium text-gray-700">{label}</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {label}
+          </label>
         )}
         <select
-          ref={ref}
           className={cn(
-            "w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-            error && "border-red-500",
+            "w-full rounded-lg border bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+            error && "border-red-500 focus:ring-red-500",
+            !error && "border-gray-200",
             className
           )}
+          ref={ref}
           {...props}
         >
           {children}
         </select>
-        {error && <p className="text-xs text-red-500">{error}</p>}
+        {error && (
+          <p className="mt-1 text-sm text-red-600">{error}</p>
+        )}
       </div>
     );
   }

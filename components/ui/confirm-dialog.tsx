@@ -9,6 +9,8 @@ interface ConfirmDialogProps {
   onConfirm: () => void;
   title: string;
   message: string;
+  confirmText?: string;
+  cancelText?: string;
 }
 
 export function ConfirmDialog({
@@ -17,6 +19,8 @@ export function ConfirmDialog({
   onConfirm,
   title,
   message,
+  confirmText = 'Confirm',
+  cancelText = 'Cancel'
 }: ConfirmDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -28,13 +32,13 @@ export function ConfirmDialog({
             variant="outline"
             onClick={onClose}
           >
-            Cancel
+            {cancelText}
           </Button>
           <Button
             variant="destructive"
             onClick={onConfirm}
           >
-            Logout
+            {confirmText}
           </Button>
         </div>
       </DialogContent>

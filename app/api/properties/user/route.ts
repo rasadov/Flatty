@@ -16,30 +16,24 @@ export async function GET() {
       );
     }
 
+    // Получаем ВСЕ объекты пользователя, включая те, что на модерации
     const properties = await prisma.property.findMany({
       where: {
-        ownerId: session.user.id
+        ownerId: session.user.id,
       },
       include: {
-        ratings: true,
-        likedBy: true,
-        owner: true,
         images: true,
+        ratings: true,
+        owner: true,
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     });
 
-    const formattedProperties = properties.map((property: any) => ({
-      ...property,
-      coverImage: property.coverImage || property.images[0],
-      images: property.images,
-    }));
-
-    return NextResponse.json(formattedProperties);
+    return NextResponse.json(properties);
   } catch (error) {
-    console.error('Error fetching properties:', error);
+    console.error('Error fetching user properties:', error);
     return NextResponse.json(
       { error: 'Failed to fetch properties' },
       { status: 500 }

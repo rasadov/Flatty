@@ -1,262 +1,338 @@
 'use client';
 
-import { Property } from '@/constants/properties';
-import { cn } from '@/lib/utils';
+import { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Property } from '@/types/property';
+import Image from 'next/image';
+import Link from 'next/link';
+import { formatPrice } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useCurrency } from '@/components/ui/currency-selector';
-import { BookmarkPlus, Edit } from 'lucide-react';
+import { Edit, Trash2, MapPin } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
-import Image from 'next/image';
-import { useState } from 'react';
-import EditPropertyDialog from '@/components/profile/EditPropertyDialog';
+import { EditPropertyDialog } from '@/components/profile/EditPropertyDialog';
+import { RatingBadge } from "@/components/ui/rating-badge";
+import { usePropertyLimit } from '@/contexts/PropertyLimitContext';
+import { HeartIcon } from 'lucide-react';
 
 interface PropertyCardProps {
   property: Property;
-  id: string | number;
-  title: string;
-  description: string;
-  price: number;
-  livingArea?: number;
-  location: string;
-  type: string;
-  status: string;
-  bedrooms: number;
-  bathrooms: number;
-  totalArea: number;
-  coverImage?: string;
-  images?: string[];
-  ratings: any[];
-  totalRatings: number;
-  likedBy: any[];
-  floor?: number;
-  apartmentStories?: number;
-  buildingFloors?: number;
-  livingRooms?: number;
-  balconies?: number;
-  totalRooms?: number;
-  renovation?: string;
-  furnishing?: string;
+  onUpdate?: (property: Property | null) => void;
   isUserProperty?: boolean;
+  onRemoveFromFavorites?: () => void;
 }
 
-const PropertyCard = ({ isUserProperty, ...props }: PropertyCardProps) => {
+export function PropertyCard({ property, onUpdate, isUserProperty, onRemoveFromFavorites }: PropertyCardProps) {
   const router = useRouter();
   const { data: session } = useSession();
-  const { formatPrice } = useCurrency();
   const { toast } = useToast();
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { refreshLimit } = usePropertyLimit();
+  const [isSaving, setIsSaving] = useState(false);
 
-  const displayImage = props.coverImage 
-    ? props.coverImage
-    : props.images && props.images.length > 0 
-      ? props.images[0]
-      : '/images/placeholder.jpg';
+  const displayImage = property.coverImage || 
+    (property.images && property.images.length > 0 ? property.images[0].url : '/placeholder.png');
 
-  const isS3Image = displayImage.includes('s3.amazonaws.com');
+  const handleUpdate = async (updatedProperty: Property | null) => {
+    if (!updatedProperty) return;
 
-  const handleClick = () => {
-    router.push(`/properties/${props.id}`);
+    try {
+      const endpoint = property.rejected
+        ? `/api/properties/resubmit/${property.id}`
+        : `/api/properties/${property.id}`;
+
+      const response = await fetch(endpoint, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedProperty),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update property');
+      }
+
+      const data = await response.json();
+      
+      toast({
+        title: 'Success',
+        description: property.rejected 
+          ? 'Property has been resubmitted for moderation'
+          : 'Property has been updated',
+      });
+
+      if (onUpdate) {
+        onUpdate(data);
+      }
+      
+      setIsEditOpen(false);
+      router.refresh();
+    } catch (error) {
+      console.error('Error updating property:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update property',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleSaveSearch = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Предотвращаем переход на страницу объекта
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!confirm('Are you sure you want to delete this property?')) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      const response = await fetch(`/api/properties/${property.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete property');
+      }
+
+      toast({
+        title: "Success",
+        description: "Property deleted successfully",
+      });
+
+      if (onUpdate) {
+        onUpdate(null);
+      }
+
+      await refreshLimit();
+
+      router.refresh();
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete property",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsEditOpen(true);
+  };
+
+  const formatCurrency = (price: number, currency: string) => {
+    const validCurrencies = ['EUR', 'USD', 'GBP'];
+    const safeCurrency = validCurrencies.includes(currency) ? currency : 'EUR';
+    
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: safeCurrency,
+    }).format(price);
+  };
+
+  const handleSave = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
 
     if (!session?.user) {
       toast({
-        title: "Authentication required",
-        description: "Please sign in to save searches",
+        title: "Error",
+        description: "Please login to save properties",
         variant: "destructive"
       });
       return;
     }
 
     try {
-      const response = await fetch('/api/user/saved-searches', {
+      setIsSaving(true);
+      const response = await fetch('/api/favorites/add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: props.title,
-          criteria: {
-            propertyType: props.type,
-            location: props.location,
-            price: props.price,
-            beds: props.bedrooms,
-            baths: props.bathrooms,
-            area: props.totalArea
-          }
-        }),
+        body: JSON.stringify({ propertyId: property.id }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save search');
+        throw new Error('Failed to save property');
       }
 
       toast({
         title: "Success",
-        description: "Search criteria saved successfully",
+        description: "Property saved to favorites",
       });
     } catch (error) {
-      console.error('Error saving search:', error);
+      console.error('Error saving property:', error);
       toast({
         title: "Error",
-        description: "Failed to save search. Please try again.",
+        description: "Failed to save property",
         variant: "destructive"
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  // Вычисляем рейтинг на основе массива ratings
-  const rating = (props.ratings ?? []).length > 0
-  ? props.ratings.reduce((acc, r) => acc + r.value, 0) / props.ratings.length
-  : 0;
+  const formatAddress = (property: Property) => {
+    const firstLine = [];
+    const secondLine = [];
 
-  // Проверяем, поставил ли текущий пользователь рейтинг
-  
+    // Первая строка: улица, номер здания и блок
+    if (property.street) {
+      let streetPart = property.street;
+      if (property.buildingNumber) {
+        streetPart += ` ${property.buildingNumber}`;
+      }
+      if (property.block) {
+        streetPart += `, Block ${property.block}`;
+      }
+      firstLine.push(streetPart);
+    }
 
-  const handleEdit = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Предотвращаем переход на страницу объекта
-    setIsEditDialogOpen(true);
+    // Вторая строка: город, район, регион и индекс
+    if (property.city) {
+      let locationPart = property.city;
+      if (property.district) {
+        locationPart += `, ${property.district}`;
+      }
+      secondLine.push(locationPart);
+    }
+    
+    if (property.region) {
+      secondLine.push(property.region);
+    }
+    
+    if (property.postalCode) {
+      secondLine.push(property.postalCode);
+    }
+
+    return {
+      firstLine: firstLine.join(' ') || 'Address not specified',
+      secondLine: secondLine.join(' • ') || ''
+    };
   };
 
   return (
-    <>
-      <div 
-        onClick={handleClick}
-        className={cn(
-          "group relative overflow-hidden transition-all duration-300 h-full cursor-pointer",
-          "bg-white rounded-xl border border-gray-100",
-          "hover:shadow-lg hover:border-gray-200"
-        )}
-      >
-        {/* Image Container */}
-        <div className="relative w-full h-[240px] overflow-hidden rounded-t-xl">
-          <Image
-            src={displayImage}
-            alt={props.title}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            priority={false}
-            quality={75}
-            unoptimized={isS3Image}
-            onError={(e) => {
-              console.log("Property image load error:", e);
-              e.currentTarget.src = '/images/placeholder.jpg';
-            }}
-          />
-          
-          {/* Показываем индикатор только если используется именно coverImage */}
-          
-         
-       
-
-          {/* Рейтинг поверх изображения */}
-          <div className="absolute top-3 left-3 flex items-center gap-1 bg-white/70 px-2  rounded-lg ">
-            <span className="text-primary text-base font-bold">B+</span>
-         
-            {/* <span className="text-sm font-medium text-gray-700">
-              {((props.ratings ?? []).length > 0
-                ? props.ratings.reduce((acc, r) => acc + r.value, 0) / props.ratings.length
-                : 0).toFixed(1)}
-            </span> */}
-            
-            {/* <span className="text-xs text-gray-500">
-              ({props.totalRatings})
-            </span> */}
-          </div>
-
-          
-
-          {/* Градиент поверх изображения для лучшей читаемости */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </div>
-
-        {/* Content Container */}
-        <div className="p-4 bg-white border-t border-gray-100">
-          {/* Title & Location */}
-         <div className='flex'>
-         <div className="mb-3">
-            <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">
-              {props.title}
-            </h3>
-            <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-              {props.location} <span>📍</span>
+    <Card className="relative overflow-hidden">
+      {isUserProperty && !property.moderated && (
+        <div className="absolute inset-0 bg-black/50 z-10 flex items-center justify-center">
+          <div className="bg-white/90 px-4 py-2 rounded-lg">
+            <p className="text-sm font-medium text-gray-900">
+              {property.rejected 
+                ? `Rejected: ${property.rejectionReason}`
+                : 'Waiting for moderation'
+              }
             </p>
+            {property.rejected && (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="mt-2 w-full"
+                onClick={() => setIsEditOpen(true)}
+              >
+                Resubmit Again
+              </Button>
+            )}
           </div>
-
-         
-                 {isUserProperty && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleEdit}
-              className="ml-auto bg-primary text-white"
-            >
-              <Edit className="w-4 h-4 mr-1 bg-primary text-white" />
-              Edit
-            </Button>
+        </div>
+      )}
+      
+      <Link href={`/properties/${property.id}`} className="block">
+        <div className="relative h-48">
+          <Image
+            src={property.coverImage || property.images[0]?.url || '/placeholder.png'}
+            alt={property.title}
+            fill
+            className="object-cover"
+          />
+          {property.moderated && !property.rejected && property.propertyRating && (
+            <div className="absolute top-2 left-2">
+              <RatingBadge rating={property.propertyRating} />
+            </div>
           )}
-         </div>
-       
-
-          {/* Specs & Price */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1">
-                <span className="text-gray-400">🛏</span>
-                <span className="text-sm font-medium text-gray-600">{props.bedrooms}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="text-gray-400">🚿</span>
-                <span className="text-sm font-medium text-gray-600">{props.bathrooms}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="text-gray-400">📏</span>
-                <span className="text-sm font-medium text-gray-600">{props.totalArea} м²</span>
-              </div>
-            </div>
-            <div className="text-lg font-bold text-primary">
-              {formatPrice(props.price)}
-            </div>
-          </div>
-
-          
         </div>
 
-        {/* Save Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 hover:bg-white"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleSaveSearch(e);
-          }}
-        >
-          <BookmarkPlus className="w-5 h-5" />
-        </Button>
-      </div>
+        <div className="p-4">
+          <h3 className="text-lg font-semibold truncate">{property.title}</h3>
+          <div className="flex flex-col gap-0.5 text-gray-500 mt-2">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 flex-shrink-0" />
+              <span className="text-sm truncate">
+                {formatAddress(property).firstLine}
+              </span>
+            </div>
+            {formatAddress(property).secondLine && (
+              <span className="text-xs text-gray-400 truncate pl-6">
+                {formatAddress(property).secondLine}
+              </span>
+            )}
+          </div>
+          <div className="mt-2 flex justify-between items-center">
+            <span className="text-lg font-bold">
+              {formatCurrency(property.price, property.currency)}
+            </span>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span>{property.bedrooms} bed</span>
+              <span>•</span>
+              <span>{property.bathrooms} bath</span>
+              <span>•</span>
+              <span>{property.totalArea} m²</span>
+            </div>
+          </div>
+        </div>
+      </Link>
+
+      {isUserProperty && (
+        <div className="absolute top-2 right-2 flex gap-2 z-10">
+          <Button
+            size="icon"
+            variant="secondary"
+            className="bg-white hover:bg-gray-100"
+            onClick={handleEdit}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="destructive"
+            className="hover:bg-red-600"
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       {isUserProperty && (
         <EditPropertyDialog
-          isOpen={isEditDialogOpen}
-          onClose={() => {
-            console.log('Dialog closing');
-            setIsEditDialogOpen(false);
-          }}
-          property={props.property}
-          onUpdate={(updatedProperty) => {
-            console.log('Property update callback:', updatedProperty);
-            setIsEditDialogOpen(false);
-          }}
+          property={property}
+          isOpen={isEditOpen}
+          onClose={() => setIsEditOpen(false)}
+          onUpdate={handleUpdate}
+          isResubmission={property.rejected}
         />
       )}
-    </>
-  );
-};
 
-export default PropertyCard; 
+      {session?.user && !isUserProperty && (
+        <button
+          onClick={handleSave}
+          disabled={isSaving}
+          className="absolute top-2 right-2 z-10 bg-white/90 p-2 rounded-full shadow-md hover:bg-white"
+        >
+          <HeartIcon className="w-5 h-5" />
+        </button>
+      )}
+    </Card>
+  );
+}
+
+export default PropertyCard;

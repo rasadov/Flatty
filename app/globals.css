@@ -85,4 +85,40 @@ body {
   .container {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
+}
+
+/* Swiper стили */
+.swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.swiper-slide {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.swiper-button-prev,
+.swiper-button-next {
+  color: white !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  background-color: rgba(0,0,0,0.3);
+  padding: 2rem;
+  border-radius: 50%;
+  transform: scale(0.7);
+}
+
+.swiper-button-prev:hover,
+.swiper-button-next:hover {
+  background-color: rgba(0,0,0,0.5);
+}
+
+.swiper-pagination-bullet {
+  background: white !important;
+  opacity: 0.8 !important;
+}
+
+.swiper-pagination-bullet-active {
+  opacity: 1 !important;
 } 
