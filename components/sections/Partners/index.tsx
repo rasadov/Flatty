@@ -7,79 +7,82 @@ import { Star, Phone, ArrowRight, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
+import { Card } from '@/components/ui/card';
+import { Avatar } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
-interface Agent {
+interface Partner {
   id: string;
   name: string;
-  image: string | null;
-  email: string;
-  phone: string | null;
-  countryCode: string | null;
-  description: string | null;
-  experience: number | null;
-  licenseNumber: string | null;
-  listings: { id: string }[];
-  _count: {
-    reviews: number;
-  };
-  rating: number;
+  image?: string | null;
+  role: string;
+  experience?: number;
+  listings?: Array<{ id: string }>;
 }
 
-const AgentCard = ({ agent }: { agent: Agent }) => {
-  return (
-    <div className="bg-white rounded-lg border border-gray-100 shadow-sm p-4 flex flex-col gap-4">
-      <div className="flex gap-2">
-        <div className="relative w-[78px] h-[78px]">
-          <Image 
-            src={agent.image || '/images/placeholder-avatar.png'}
-            alt={agent.name}
-            fill
-            className="rounded-full object-cover"
-          />
-        </div>
-        <div className="flex flex-col justify-center">
-          <h3 className="font-medium text-gray-900">{agent.name}</h3>
-          <p className="text-sm text-gray-600">
-            {agent.experience ? `${agent.experience} years experience` : 'Real Estate Agent'}
-          </p>
-          <p className="text-sm text-gray-500">
-            License: {agent.licenseNumber || 'N/A'}
-          </p>
-        </div>
-      </div>
-      
-      <div className="border-t border-gray-100 pt-4">
-        <p className="text-sm text-gray-600 line-clamp-3">
-          {agent.description || 'Professional real estate agent specializing in helping clients find their perfect property in Cyprus.'}
-        </p>
-        <p className="text-sm text-gray-600 mt-2">
-          Active listings: {agent.listings.length}
-        </p>
-      </div>
+interface PartnersProps {
+  partners: Partner[];
+}
 
-      <div className="flex gap-2 mt-auto pt-4">
-        <Button 
-          variant="outline" 
-          className="flex-1 text-sm"
-          onClick={() => window.location.href = `/users/${agent.id}`}
-        >
-          View Profile
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
-        <Button 
-          className="flex-1 text-sm"
-          onClick={() => window.location.href = `mailto:${agent.email}`}
-        >
-          Contact
-          <Mail className="w-4 h-4 ml-2" />
-        </Button>
-      </div>
+export function Partners({ partners }: PartnersProps) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {partners.map((partner) => (
+        <PartnerCard key={partner.id} partner={partner} />
+      ))}
     </div>
   );
-};
+}
 
-const Partners = () => {
-  const [agents, setAgents] = useState<Agent[]>([]);
+function PartnerCard({ partner }: { partner: Partner }) {
+  const initials = partner.name
+    ? partner.name.split(' ').map(n => n[0]).join('')
+    : 'U';
+
+  const listingsCount = partner.listings?.length || 0;
+
+  return (
+    <Card className="p-6">
+      <div className="flex items-center gap-4">
+        <Avatar className="w-16 h-16" fallback={initials}>
+          {partner.image && (
+            <img src={partner.image} alt={partner.name} />
+          )}
+        </Avatar>
+
+        <div>
+          <h3 className="font-semibold">
+            {partner.name}
+          </h3>
+          <Badge variant="secondary" className="mt-1">
+            {partner.role}
+          </Badge>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        {partner.experience && (
+          <p className="text-sm text-gray-600">
+            Experience: {partner.experience} years
+          </p>
+        )}
+        <p className="text-sm text-gray-600 mt-2">
+          Active listings: {listingsCount}
+        </p>
+      </div>
+
+      <Link 
+        href={`/users/${partner.id}`}
+        className="text-primary hover:underline text-sm block mt-4"
+      >
+        View Profile
+      </Link>
+    </Card>
+  );
+}
+
+export default function PartnersSection() {
+  const [agents, setAgents] = useState<Partner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -161,12 +164,10 @@ const Partners = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {agents.map((agent) => (
-            <AgentCard key={agent.id} agent={agent} />
+            <PartnerCard key={agent.id} partner={agent} />
           ))}
         </div>
       </div>
     </Section>
   );
-};
-
-export default Partners; 
+} 

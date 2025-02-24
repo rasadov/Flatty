@@ -1,38 +1,55 @@
-import { Button } from '@/components/ui/button';
+'use client';
+
 import { Card } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { User } from '@prisma/client';
 import Link from 'next/link';
 
 interface AgentCardProps {
-  agent: {
-    id: string;
-    name: string;
-    email: string;
-    image: string | null;
-    role: string;
-    experience?: number;
-    description?: string;
+  agent: User & {
+    properties?: {
+      id: string;
+    }[];
   };
 }
 
 export function AgentCard({ agent }: AgentCardProps) {
+  if (!agent) return null;
+
+  const initials = agent.name
+    ? agent.name.split(' ').map(n => n[0]).join('')
+    : 'U';
+
+  const propertiesCount = agent.properties?.length || 0;
+
   return (
     <Card className="p-6 flex flex-col items-center text-center">
-      <Avatar 
-        src={agent.image || undefined}
-        className="w-24 h-24 mb-4"
-      />
-      <h3 className="text-xl font-semibold mb-2">{agent.name}</h3>
-      <p className="text-gray-600 mb-4">{agent.description || 'Real Estate Professional'}</p>
+      <Avatar className="w-24 h-24 mb-4" fallback={initials}>
+        {agent.image && (
+          <img src={agent.image} alt={agent.name || 'Agent'} />
+        )}
+      </Avatar>
+      
+      <h3 className="text-lg font-semibold mb-2">
+        {agent.name || 'Anonymous Agent'}
+      </h3>
+      
+      <p className="text-sm text-gray-500 mb-4">
+        Active listings: {propertiesCount}
+      </p>
+
       {agent.experience && (
-        <p className="text-sm text-gray-500 mb-4">
-          Experience: {agent.experience} years
-        </p>
+        <Badge variant="secondary" className="mb-4">
+          {agent.experience} years experience
+        </Badge>
       )}
-      <Link href={`/users/${agent.id}`} className="mt-auto">
-        <Button variant="outline" className="w-full">
-          View Profilee
-        </Button>
+
+      <Link 
+        href={`/users/${agent.id}`}
+        className="text-primary hover:underline text-sm"
+      >
+        View Profile
       </Link>
     </Card>
   );
