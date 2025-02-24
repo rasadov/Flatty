@@ -16,7 +16,10 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Flatty',
-  description: 'Find your perfect place to live',
+  description: 'Find your perfect property',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({

@@ -160,43 +160,8 @@ export async function PATCH(request: Request) {
   }
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    
-    // Если запрашиваются свойства пользователя, проверяем авторизацию
-    const { searchParams } = new URL(request.url);
-    const isUserProperties = searchParams.get('user') === 'true';
-
-    if (isUserProperties) {
-      if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
-      const properties = await prisma.property.findMany({
-        where: {
-          ownerId: session.user.id
-        },
-        include: {
-          images: true,
-          owner: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              image: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
-
-      return NextResponse.json(properties);
-    }
-
-    // Для публичного списка свойств
     const properties = await prisma.property.findMany({
       where: {
         moderated: true,
@@ -204,7 +169,6 @@ export async function GET(request: Request) {
       },
       include: {
         images: true,
-        documents: true,
         owner: {
           select: {
             id: true,
@@ -222,9 +186,6 @@ export async function GET(request: Request) {
     return NextResponse.json(properties);
   } catch (error) {
     console.error('Error fetching properties:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch properties' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch properties' }, { status: 500 });
   }
 }
