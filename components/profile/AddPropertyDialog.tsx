@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import Select from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { Resolver } from 'react-hook-form';
 import * as z from 'zod';
 import { cyprusRegions } from '@/constants/regions';
 import { useToast } from '@/components/ui/use-toast';
@@ -55,7 +56,7 @@ const DocumentUpload = ({ onDocumentsChange, maxDocuments = 5 }: DocumentUploadP
       return;
     }
 
-    for (const file of files) {
+    for (const file of Array.from(files)) {
       const formData = new FormData();
       formData.append('file', file);
 
@@ -163,7 +164,7 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
   const FORM_STORAGE_KEY = 'property-form-data';
   
   const form = useForm<PropertyFormData>({
-    resolver: zodResolver(propertySchema),
+    resolver: zodResolver(propertySchema) as Resolver<PropertyFormData>,
     defaultValues: {
       title: '',
       description: '',
@@ -277,17 +278,6 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
         toast({
           title: "Validation Error",
           description: "Please select a location on the map",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-
-    if (step === 1) {
-      if (!formData.location) {
-        toast({
-          title: "Validation Error",
-          description: "Please select a location",
           variant: "destructive"
         });
         return;
@@ -428,11 +418,11 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
       
       // Обновляем список объектов
       if (onAdd) {
-        await onAdd(newProperty);
+        onAdd(newProperty);
       }
 
-      // Обновляем страницу для отображения нового объекта
-      router.refresh();
+      // Принудительно перезагружаем страницу профиля
+      window.location.href = '/protected/profile';
 
     } catch (error) {
       console.error('Error in form submission:', error);
@@ -448,29 +438,31 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
     const files = e.target.files;
     if (!files) return;
 
-    const formData = new FormData();
-    formData.append('file', files[0]);
+    for (const file of Array.from(files)) {
+      const formData = new FormData();
+      formData.append('file', file);
 
-    try {
-      const response = await fetch('/api/upload/s3', {
-        method: 'POST',
-        body: formData,
-      });
+      try {
+        const response = await fetch('/api/upload/s3', {
+          method: 'POST',
+          body: formData,
+        });
 
-      if (!response.ok) throw new Error('Upload failed');
+        if (!response.ok) throw new Error('Upload failed');
 
-      const data = await response.json();
-      setImages(prev => [...prev, data.url]);
-      if (!coverImage) {
-        setCoverImage(data.url);
+        const data = await response.json();
+        setImages(prev => [...prev, data.url]);
+        if (!coverImage) {
+          setCoverImage(data.url);
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to upload image',
+          variant: 'destructive',
+        });
       }
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to upload image',
-        variant: 'destructive',
-      });
     }
   };
 
@@ -889,7 +881,7 @@ export function AddPropertyDialog({ isOpen, onClose, onAdd }: AddPropertyDialogP
                 <Select
                   label="Renovation"
                   {...form.register('renovation')}
-                  error={form.formState.errors.renovation?.message}
+                  error={!!form.formState.errors.renovation?.message}
                 >
                   <option value="cosmetic">Cosmetic</option>
                   <option value="designer">Designer</option>

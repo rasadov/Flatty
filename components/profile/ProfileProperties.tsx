@@ -21,7 +21,7 @@ export function ProfileProperties() {
 
   // Для builder показываем табы
   if (user.role === 'builder') {
-    return <ProfileTabs />;
+    return <ProfileTabs userId={user.id} />;
   }
 
   // Для остальных ролей показываем только список объектов
@@ -35,7 +35,7 @@ export function ProfileProperties() {
       </div>
 
       <ListingStats />
-      <PropertyList />
+      <PropertyList userId={user.id} />
     </div>
   );
 } 

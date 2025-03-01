@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Complex } from '@/types/complex';
 import { Card } from '@/components/ui/card';
 import Image from 'next/image';
@@ -11,43 +11,110 @@ import { Button } from '@/components/ui/button';
 export default function FeaturedComplexes() {
   const [complexes, setComplexes] = useState<Complex[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchComplexes();
-  }, []);
-
-  const fetchComplexes = async () => {
+  // Используем useCallback для оптимизации и предотвращения бесконечных циклов
+  const fetchComplexes = useCallback(async () => {
+    // Убираем проверку isLoading, так как мы всегда хотим загрузить данные при первом вызове
+    
+    setIsLoading(true);
     try {
       const response = await fetch('/api/complexes/public');
-      if (!response.ok) throw new Error('Failed to fetch complexes');
+      
+      // Проверяем статус ответа
+      if (!response.ok) {
+        console.warn('Не удалось загрузить комплексы.');
+        setError(`Ошибка загрузки комплексов: ${response.status}`);
+        return;
+      }
+      
+      // Проверяем тип ответа
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('API вернул не JSON формат.');
+        setError('Неверный формат ответа от сервера');
+        return;
+      }
+      
       const data = await response.json();
+      
+      // Проверяем что данные - массив
+      if (!Array.isArray(data)) {
+        console.warn('API вернул не массив данных.');
+        setError('Некорректный формат данных от сервера');
+        return;
+      }
+      
+      // Фильтруем модерированные комплексы для надежности
       const moderatedComplexes = data.filter(
-        (complex: Complex) => complex.moderated && !complex.rejected
+        (complex: Complex) => complex.moderated === true && complex.rejected !== true
       );
+      
+      console.log('Загружено комплексов:', moderatedComplexes.length);
       setComplexes(moderatedComplexes);
+      setError(null); // Сбрасываем ошибку при успешной загрузке
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error fetching complexes:', error);
+      setError(error instanceof Error ? error.message : 'Не удалось загрузить комплексы');
       toast({
-        title: 'Error',
-        description: 'Failed to load complexes',
-        variant: 'destructive'
+        title: 'Ошибка',
+        description: error instanceof Error ? error.message : 'Не удалось загрузить комплексы',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]); // Убрали isLoading из зависимостей
 
-  if (isLoading) {
-    return <div>Loading...</div>;
+  // Эффект для обновления данных
+  useEffect(() => {
+    fetchComplexes();
+    
+    // Обновляем каждые 5 минут
+    const intervalId = setInterval(() => {
+      fetchComplexes();
+    }, 300000);
+    
+    return () => clearInterval(intervalId);
+  }, [fetchComplexes]);
+
+  if (isLoading && complexes.length === 0) {
+    return (
+      <section className="py-4 bg-[#F9F8FF]">
+        <div className="container">
+          <div className="sm:flex justify-between sm:text-left text-center mb-8">
+            <div>
+              <p className="text-black sm:text-left text-center text-2xl mt-2">Discover our newest residential complexes</p>
+            </div>
+          </div>
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </section>
+    );
   }
 
-  if (complexes.length === 0) {
-    return null;
+  if (error) {
+    return (
+      <section className="py-4 bg-[#F9F8FF]">
+        <div className="container">
+          <div className="sm:flex justify-between sm:text-left text-center mb-8">
+            <div>
+              <p className="text-black sm:text-left text-center text-2xl mt-2">Discover our newest residential complexes</p>
+            </div>
+          </div>
+          <div className="text-center py-8">
+            <p className="text-red-500">{error}</p>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   return (
-    <section className="py-4 bg-white">
+    <section className="py-4 bg-[#F9F8FF]">
       <div className="container">
         <div className="sm:flex justify-between sm:text-left text-center  mb-8">
           <div>

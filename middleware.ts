@@ -16,7 +16,15 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const isAuthPage = ['/auth/signin', '/auth/register'].includes(req.nextUrl.pathname);
-        return !!token || isAuthPage;
+        
+        // Разрешаем доступ к публичным API маршрутам без авторизации
+        const isPublicApiRoute = req.nextUrl.pathname.startsWith('/api') && 
+          (req.nextUrl.pathname.includes('/public') || 
+           req.nextUrl.pathname.startsWith('/api/properties/public') || 
+           req.nextUrl.pathname.startsWith('/api/complexes/public') || 
+           req.nextUrl.pathname.startsWith('/api/agents/public'));
+        
+        return !!token || isAuthPage || isPublicApiRoute;
       },
     },
   }

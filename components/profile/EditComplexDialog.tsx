@@ -49,7 +49,7 @@ export function EditComplexDialog({
     }
   });
 
-  const onSubmit = async (data: Complex) => {
+  const onSubmit = async (data: Partial<Complex>) => {
     try {
       setIsSubmitting(true);
 
@@ -86,6 +86,69 @@ export function EditComplexDialog({
     }
   };
 
-  // Остальной JSX такой же как в AddComplexDialog, 
-  // только с другими заголовками и кнопкой "Save Changes" вместо "Add Complex"
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-screen overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Complex</DialogTitle>
+          <DialogDescription>
+            Update the details of your complex below.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {step === 1 && (
+            <div className="space-y-4">
+              <Input label="Name" {...form.register('name')} />
+              <Textarea label="Description" {...form.register('description')} />
+              <Select label="Category" {...form.register('category')}>
+                <option value="residential">Residential</option>
+                <option value="commercial">Commercial</option>
+              </Select>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-4">
+              <Input label="Building Area" type="number" {...form.register('buildingArea')} />
+              <Input label="Living Area" type="number" {...form.register('livingArea')} />
+              <Input label="Total Objects" type="number" {...form.register('totalObjects')} />
+              <Input label="Floors" type="number" {...form.register('floors')} />
+              <Input label="Year Built" type="number" {...form.register('yearBuilt')} />
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-4">
+              <ImageUpload
+                onImagesChange={(urls) => form.setValue('images', urls)}
+                onCoverImageChange={(url) => form.setValue('coverImage', url)}
+                maxImages={10}
+                initialImages={complex.images}
+                initialCoverImage={complex.coverImage}
+              />
+            </div>
+          )}
+
+          <div className="flex justify-between mt-6">
+            {step > 1 && (
+              <Button type="button" variant="outline" onClick={() => setStep(prev => prev - 1)}>
+                Back
+              </Button>
+            )}
+
+            {step < 3 ? (
+              <Button type="button" onClick={() => setStep(prev => prev + 1)} className="ml-auto">
+                Next
+              </Button>
+            ) : (
+              <Button type="submit" disabled={isSubmitting} className="ml-auto">
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
+              </Button>
+            )}
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 } 

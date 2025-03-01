@@ -22,6 +22,11 @@ export function AgentCard({ agent }: AgentCardProps) {
     : 'U';
 
   const propertiesCount = agent.properties?.length || 0;
+  
+  // Отображаем роль как "Individual Agent" для пользователей с ролью, содержащей "agent"
+  const displayRole = agent.role && agent.role.includes('agent') 
+    ? 'Individual Agent' 
+    : (agent.role || '');
 
   return (
     <Card className="p-6 flex flex-col items-center text-center">
@@ -34,6 +39,10 @@ export function AgentCard({ agent }: AgentCardProps) {
       <h3 className="text-lg font-semibold mb-2">
         {agent.name || 'Anonymous Agent'}
       </h3>
+      
+      <Badge className="mb-2" variant="outline">
+        {displayRole}
+      </Badge>
       
       <p className="text-sm text-gray-500 mb-4">
         Active listings: {propertiesCount}

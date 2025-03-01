@@ -10,6 +10,16 @@ export interface Property {
   status: 'for-rent' | 'for-sale';
   category: 'apartment' | 'house' | 'villa' | 'land';
   
+  // Адресные поля
+  street?: string;
+  buildingNumber?: string;
+  block?: string;
+  city?: string;
+  district?: string;
+  region?: string;
+  postalCode?: string;
+  location?: string;
+  
   // Основные характеристики
   totalArea: number;
   bedrooms: number;
@@ -33,8 +43,8 @@ export interface Property {
   complexName: string | null;
   
   // Изображения
-  images: Array<{ url: string }>;
-  coverImage: string | null;
+  images?: { url: string }[];
+  coverImage: string;
   
   // Рейтинг
   propertyRating?: 'A' | 'B' | 'B+' | 'C' | 'D';
@@ -43,9 +53,9 @@ export interface Property {
   createdAt: string;
   updatedAt: string;
   ownerId: string;
-  owner: {
+  owner?: {
     id: string;
-    name: string;
+    name: string | null;
     email: string;
     phone?: string;
     image: string | null;
@@ -55,11 +65,11 @@ export interface Property {
     userId: string;
   }[];
 
-  latitude?: number;
-  longitude?: number;
+  latitude: number;
+  longitude: number;
 
-  moderated: boolean;
-  rejected: boolean;
+  moderated?: boolean;
+  rejected?: boolean;
   rejectionReason?: string;
 
   documents: {
@@ -77,6 +87,8 @@ export interface Property {
     buildingNumber?: string;
     block?: string;
   };
+
+  buildingAge: number;
 }
 
 export interface PropertyFormData {

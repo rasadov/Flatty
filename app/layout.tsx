@@ -11,15 +11,13 @@ import { PropertyLimitProvider } from '@/contexts/PropertyLimitContext';
 import { ComplexLimitProvider } from '@/contexts/ComplexLimitContext';
 import { PropertiesProvider } from '@/contexts/PropertiesContext';
 import { SessionProvider } from '@/providers/SessionProvider';
+import { roboto } from './fonts/roboto';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Flatty',
   description: 'Find your perfect property',
-  icons: {
-    icon: '/favicon.ico',
-  },
 };
 
 export default function RootLayout({
@@ -28,8 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className={roboto.variable}>
+      <body className="font-roboto">
         <SessionProvider>
           <PropertyLimitProvider>
             <ComplexLimitProvider>

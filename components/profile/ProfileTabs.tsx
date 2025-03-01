@@ -8,12 +8,16 @@ import { AddPropertyButton } from './AddPropertyButton';
 import { AddComplexButton } from './AddComplexButton';
 import { ListingStats } from './ListingStats';
 
-export function ProfileTabs() {
+interface ProfileTabsProps {
+  userId: string;
+}
+
+export function ProfileTabs({ userId }: ProfileTabsProps) {
   const [activeTab, setActiveTab] = useState('properties');
 
   return (
     <Tabs defaultValue="properties" className="space-y-6" onValueChange={setActiveTab}>
-      <div className="flex flex-col sm:flex-row  items-center sm:items-start justify-between">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between">
         <TabsList>
           <TabsTrigger value="properties">My Properties</TabsTrigger>
           <TabsTrigger value="complexes">My Complexes</TabsTrigger>
@@ -26,11 +30,11 @@ export function ProfileTabs() {
 
       <TabsContent value="properties">
         <ListingStats />
-        <PropertyList />
+        <PropertyList userId={userId} />
       </TabsContent>
 
       <TabsContent value="complexes">
-        <ComplexList />
+        <ComplexList userId={userId} />
       </TabsContent>
     </Tabs>
   );

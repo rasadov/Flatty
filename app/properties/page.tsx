@@ -9,6 +9,7 @@ import { Property } from '@/types/property';
 import { useToast } from '@/components/ui/use-toast';
 import MapView from '@/components/map/MapView';
 import Link from 'next/link';
+import { FilterOptions } from '@/components/sections/FeaturedProperties/types';
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -16,6 +17,13 @@ export default function PropertiesPage() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+  const [filters, setFilters] = useState<FilterOptions>({
+    propertyType: '',
+    priceRange: '',
+    bedrooms: '',
+    sortBy: '',
+    detailedCards: false
+  });
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -63,12 +71,6 @@ export default function PropertiesPage() {
               >
                 Grid View
               </Button>
-              {/* <Button 
-                variant={viewMode === 'map' ? 'default' : 'outline'}
-                onClick={() => setViewMode('map')}
-              >
-                Map View
-              </Button> */}
               <Link href="/map">
                 <Button variant="outline">Map View</Button>
               </Link>
@@ -76,14 +78,18 @@ export default function PropertiesPage() {
           </div>
 
           <FilterBar 
-            filters={{}}
-            onFilterChange={() => {}}
+            filters={filters}
+            onFilterChange={setFilters}
           />
 
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
               {properties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
+                <PropertyCard 
+                  key={property.id} 
+                  property={property} 
+                  showDetails={!!filters.detailedCards}
+                />
               ))}
             </div>
           ) : (

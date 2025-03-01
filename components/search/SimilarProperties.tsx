@@ -6,9 +6,10 @@ import { motion } from 'framer-motion';
 
 interface SimilarPropertiesProps {
   properties: Property[];
+  showDetails?: boolean;
 }
 
-export function SimilarProperties({ properties }: SimilarPropertiesProps) {
+export function SimilarProperties({ properties, showDetails = false }: SimilarPropertiesProps) {
   return (
     <div className="mt-16">
       <motion.div
@@ -32,7 +33,7 @@ export function SimilarProperties({ properties }: SimilarPropertiesProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <PropertyCard property={property} />
+            <PropertyCard property={property} showDetails={showDetails} />
           </motion.div>
         ))}
       </div>

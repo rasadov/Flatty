@@ -18,6 +18,7 @@ export type FilterOptions = {
   propertyType: string;
   bedrooms: string;
   sortBy: string;
+  detailedCards?: boolean;
 };
 
 interface FilterBarProps {
@@ -30,7 +31,7 @@ export function FilterBar({ filters, onFilterChange }: FilterBarProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [customPriceRange, setCustomPriceRange] = useState([0, 1000000]);
 
-  const handleChange = (key: keyof FilterOptions, value: string) => {
+  const handleChange = (key: keyof FilterOptions, value: string | boolean) => {
     onFilterChange({
       ...filters,
       [key]: value
@@ -61,7 +62,29 @@ export function FilterBar({ filters, onFilterChange }: FilterBarProps) {
     <div className="bg-white rounded-lg shadow-sm">
       <div className="p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Filters</h3>
+          <div className="flex items-center gap-4">
+            <h3 className="text-lg font-semibold">Filters</h3>
+            <div 
+              className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-3 py-1 rounded-full transition-colors duration-200" 
+              onClick={() => handleChange('detailedCards', !filters.detailedCards)}
+            >
+              <label htmlFor="detailedCards" className="text-sm font-medium text-gray-600 cursor-pointer">
+                Detailed Cards
+              </label>
+              <div className="relative inline-block w-10 align-middle select-none">
+                <input 
+                  type="checkbox" 
+                  id="detailedCards" 
+                  name="detailedCards" 
+                  className="sr-only"
+                  checked={!!filters.detailedCards}
+                  onChange={() => handleChange('detailedCards', !filters.detailedCards)}
+                />
+                <div className={`block h-6 rounded-full transition-colors duration-200 ease-in-out ${filters.detailedCards ? 'bg-primary' : 'bg-gray-300'}`}></div>
+                <div className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-200 ease-in-out ${filters.detailedCards ? 'transform translate-x-4' : ''}`}></div>
+              </div>
+            </div>
+          </div>
           <Button
             variant="ghost"
             size="sm"

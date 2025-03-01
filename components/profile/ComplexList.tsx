@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Complex } from '@/types/complex';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -12,15 +12,15 @@ import { useSession } from 'next-auth/react';
 export function ComplexList() {
   const [complexes, setComplexes] = useState<Complex[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [editingComplex, setEditingComplex] = useState<Complex | null>(null);
   const { data: session } = useSession();
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchComplexes();
-  }, []);
+  const fetchComplexes = useCallback(async () => {
+    if (isLoading && isInitialized) return;
 
-  const fetchComplexes = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch('/api/complexes');
       if (!response.ok) throw new Error('Failed to fetch complexes');
@@ -35,8 +35,17 @@ export function ComplexList() {
       });
     } finally {
       setIsLoading(false);
+      setIsInitialized(true);
     }
-  };
+  }, [toast, isLoading, isInitialized]);
+
+  useEffect(() => {
+    fetchComplexes();
+
+    const intervalId = setInterval(fetchComplexes, 60000);
+
+    return () => clearInterval(intervalId);
+  }, [fetchComplexes]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this complex?')) {
@@ -73,7 +82,7 @@ export function ComplexList() {
     );
   };
 
-  if (isLoading) {
+  if (isLoading && !isInitialized) {
     return <div>Loading...</div>;
   }
 

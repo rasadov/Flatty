@@ -54,6 +54,7 @@ const config = {
         },
         fontFamily: {
           sans: ['"Inter"', "sans-serif"],
+          roboto: ['var(--font-roboto)'],
         },
         spacing: {
           // здесь можно добавить кастомные отступы, если нужно

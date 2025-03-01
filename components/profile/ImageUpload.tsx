@@ -124,7 +124,7 @@ export function ImageUpload({
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
             <Upload className="w-8 h-8 mb-2 text-gray-500" />
             <p className="mb-2 text-sm text-gray-500">
-              {isUploading ? "Загрузка..." : "Нажмите для загрузки"}
+              {isUploading ? "Loading..." : "Click to upload"}
             </p>
             <p className="text-xs text-gray-500">
               Up to {maxImages} images (max. 10MB total)

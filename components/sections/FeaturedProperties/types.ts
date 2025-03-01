@@ -3,4 +3,5 @@ export interface FilterOptions {
   priceRange: string;
   bedrooms: string;
   sortBy: string;
+  detailedCards?: boolean;
 } 

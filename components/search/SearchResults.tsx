@@ -7,9 +7,10 @@ import { motion } from 'framer-motion';
 interface SearchResultsProps {
   properties: Property[];
   searchParams: Record<string, string>;
+  showDetails?: boolean;
 }
 
-export function SearchResults({ properties, searchParams }: SearchResultsProps) {
+export function SearchResults({ properties, searchParams, showDetails = false }: SearchResultsProps) {
   return (
     <div className="mb-16">
       <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 hidden">
@@ -44,7 +45,7 @@ export function SearchResults({ properties, searchParams }: SearchResultsProps) 
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <PropertyCard property={property} />
+              <PropertyCard property={property} showDetails={showDetails} />
             </motion.div>
           ))}
         </div>
